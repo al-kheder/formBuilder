@@ -1,717 +1,53 @@
-import { useState } from "react";
 import { motion } from "motion/react";
+import { useForm, useFieldArray, Control, Controller, UseFormSetValue, UseFormGetValues } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
-import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
+import logoImage from "@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png";
+import { LynxAPISchema, type LynxAPIValues } from "@/lib/schemas/LynxAPISchema";
 
-interface LynxPersonRow {
-  id: string;
-  name: string;
-  firstname: string;
-  email: string;
-  phone: string;
-  rights: {
-    1: boolean;
-    2: boolean;
-    3: boolean;
-    4: boolean;
-  };
-}
+const LYNX_RIGHTS = [
+  { key: "viewOnly", label: "View only" },
+  { key: "transfer", label: "Transfer of crypto assets and FIAT" },
+  { key: "trading", label: "Trading rights" },
+  { key: "staking", label: "Staking rights" },
+];
 
-interface APIPersonRow {
-  id: string;
-  name: string;
-  firstname: string;
-  email: string;
-  phone: string;
-  rights: {
-    1: boolean;
-    2: boolean;
-    3: boolean;
-    4: boolean;
-    5: boolean;
-    6: boolean;
-  };
-}
+const API_RIGHTS = [
+  { key: "viewOnly", label: "View only via REST API" },
+  { key: "whitelist", label: "Requesting whitelisting of wallet address via REST API" },
+  { key: "transfer", label: "Instruct transfer of crypto assets and FIAT via REST API" },
+  { key: "tradingRest", label: "Trading rights via REST API" },
+  { key: "stakingRest", label: "Staking rights via REST API" },
+  { key: "tradingFix", label: "Trading rights via FIX API" },
+];
 
 export function LynxAPIForm() {
-  // Lynx Persons
-  const [addLynxPersons, setAddLynxPersons] = useState<
-    LynxPersonRow[]
-  >([]);
-  const [updateLynxPersons, setUpdateLynxPersons] = useState<
-    LynxPersonRow[]
-  >([]);
-  const [removeLynxPersons, setRemoveLynxPersons] = useState<
-    LynxPersonRow[]
-  >([]);
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm<LynxAPIValues>({
+    resolver: zodResolver(LynxAPISchema),
+    defaultValues: {
+      addLynxPersons: [],
+      updateLynxPersons: [],
+      removeLynxPersons: [],
+      addAPIPersons: [],
+      updateAPIPersons: [],
+      removeAPIPersons: [],
+    },
+    mode: "onBlur",
+  });
 
-  // API Persons
-  const [addAPIPersons, setAddAPIPersons] = useState<
-    APIPersonRow[]
-  >([]);
-  const [updateAPIPersons, setUpdateAPIPersons] = useState<
-    APIPersonRow[]
-  >([]);
-  const [removeAPIPersons, setRemoveAPIPersons] = useState<
-    APIPersonRow[]
-  >([]);
-
-  // Lynx Person Handlers
-  const handleLynxPersonChange = (
-    section: "add" | "update" | "remove",
-    id: string,
-    field: keyof Omit<LynxPersonRow, "rights">,
-    value: string,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddLynxPersons
-        : section === "update"
-          ? setUpdateLynxPersons
-          : setRemoveLynxPersons;
-
-    setter((prev) =>
-      prev.map((person) =>
-        person.id === id
-          ? { ...person, [field]: value }
-          : person,
-      ),
-    );
+  const onSubmit = (data: LynxAPIValues) => {
+    console.log("Form submitted:", data);
   };
-
-  const handleLynxRightChange = (
-    section: "add" | "update" | "remove",
-    id: string,
-    right: 1 | 2 | 3 | 4,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddLynxPersons
-        : section === "update"
-          ? setUpdateLynxPersons
-          : setRemoveLynxPersons;
-
-    setter((prev) =>
-      prev.map((person) => {
-        if (person.id !== id) return person;
-
-        const currentValue = person.rights[right];
-        const newRights = { ...person.rights };
-
-        if (right === 1) {
-          // Clicking checkbox 1
-          if (!currentValue) {
-            // Selecting checkbox 1 clears all others
-            newRights[1] = true;
-            newRights[2] = false;
-            newRights[3] = false;
-            newRights[4] = false;
-          } else {
-            // Deselecting checkbox 1
-            newRights[1] = false;
-          }
-        } else {
-          // Clicking checkboxes 2, 3, or 4
-          if (!currentValue) {
-            // Selecting any of 2-4 clears checkbox 1
-            newRights[1] = false;
-            newRights[right] = true;
-          } else {
-            // Deselecting checkbox 2, 3, or 4
-            newRights[right] = false;
-          }
-        }
-
-        return { ...person, rights: newRights };
-      }),
-    );
-  };
-
-  const addLynxPerson = (
-    section: "add" | "update" | "remove",
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddLynxPersons
-        : section === "update"
-          ? setUpdateLynxPersons
-          : setRemoveLynxPersons;
-    const list =
-      section === "add"
-        ? addLynxPersons
-        : section === "update"
-          ? updateLynxPersons
-          : removeLynxPersons;
-
-    const newId = `lynx-${section}-${list.length + 1}-${Date.now()}`;
-    setter((prev) => [
-      ...prev,
-      {
-        id: newId,
-        name: "",
-        firstname: "",
-        email: "",
-        phone: "",
-        rights: { 1: false, 2: false, 3: false, 4: false },
-      },
-    ]);
-  };
-
-  const removeLynxPerson = (
-    section: "add" | "update" | "remove",
-    id: string,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddLynxPersons
-        : section === "update"
-          ? setUpdateLynxPersons
-          : setRemoveLynxPersons;
-    setter((prev) => prev.filter((person) => person.id !== id));
-  };
-
-  // API Person Handlers
-  const handleAPIPersonChange = (
-    section: "add" | "update" | "remove",
-    id: string,
-    field: keyof Omit<APIPersonRow, "rights">,
-    value: string,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddAPIPersons
-        : section === "update"
-          ? setUpdateAPIPersons
-          : setRemoveAPIPersons;
-
-    setter((prev) =>
-      prev.map((person) =>
-        person.id === id
-          ? { ...person, [field]: value }
-          : person,
-      ),
-    );
-  };
-
-  const handleAPIRightChange = (
-    section: "add" | "update" | "remove",
-    id: string,
-    right: 1 | 2 | 3 | 4 | 5 | 6,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddAPIPersons
-        : section === "update"
-          ? setUpdateAPIPersons
-          : setRemoveAPIPersons;
-
-    setter((prev) =>
-      prev.map((person) => {
-        if (person.id !== id) return person;
-
-        const currentValue = person.rights[right];
-        const newRights = { ...person.rights };
-
-        if (right === 1) {
-          // Clicking checkbox 1
-          if (!currentValue) {
-            // Selecting checkbox 1 clears all others
-            newRights[1] = true;
-            newRights[2] = false;
-            newRights[3] = false;
-            newRights[4] = false;
-            newRights[5] = false;
-            newRights[6] = false;
-          } else {
-            // Deselecting checkbox 1
-            newRights[1] = false;
-          }
-        } else {
-          // Clicking checkboxes 2-6
-          if (!currentValue) {
-            // Selecting any of 2-6 clears checkbox 1
-            newRights[1] = false;
-            newRights[right] = true;
-          } else {
-            // Deselecting checkbox 2-6
-            newRights[right] = false;
-          }
-        }
-
-        return { ...person, rights: newRights };
-      }),
-    );
-  };
-
-  const addAPIPerson = (
-    section: "add" | "update" | "remove",
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddAPIPersons
-        : section === "update"
-          ? setUpdateAPIPersons
-          : setRemoveAPIPersons;
-    const list =
-      section === "add"
-        ? addAPIPersons
-        : section === "update"
-          ? updateAPIPersons
-          : removeAPIPersons;
-
-    const newId = `api-${section}-${list.length + 1}-${Date.now()}`;
-    setter((prev) => [
-      ...prev,
-      {
-        id: newId,
-        name: "",
-        firstname: "",
-        email: "",
-        phone: "",
-        rights: {
-          1: false,
-          2: false,
-          3: false,
-          4: false,
-          5: false,
-          6: false,
-        },
-      },
-    ]);
-  };
-
-  const removeAPIPerson = (
-    section: "add" | "update" | "remove",
-    id: string,
-  ) => {
-    const setter =
-      section === "add"
-        ? setAddAPIPersons
-        : section === "update"
-          ? setUpdateAPIPersons
-          : setRemoveAPIPersons;
-    setter((prev) => prev.filter((person) => person.id !== id));
-  };
-
-  // Render Lynx Section
-  const renderLynxSection = (
-    title: string,
-    section: "add" | "update" | "remove",
-    persons: LynxPersonRow[],
-  ) => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-        <div className="flex items-center gap-4 flex-1">
-          <h3 className="text-base font-normal text-gray-900">
-            {title}
-          </h3>
-          {section === "add" && persons.length > 0 && (
-            <div className="flex flex-col flex-end gap-3 text-xs text-gray-600">
-              <div className="flex items-center gap-1">
-                <span>View only</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Transfer of crypto assets and FIAT</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Trading rights</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Staking rights</span>
-              </div>
-            </div>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => addLynxPerson(section)}
-          className="hover:bg-gray-100 p-1"
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {persons.length > 0 && (
-        <div className="overflow-y-visible">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  Name
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  First Name
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  E-Mail Address
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  Phone Number
-                </th>
-                {section === "add" ? (
-                  <>
-
-                    {  
-                    Array.from({ length: 4 }).map((_, index) => (
-                      <th key={index} className="relative">
-                        <div className="absolute -rotate-90 whitespace-nowrap -top-4 left-1/2 -translate-x-1/2 text-center py-2 px-2 font-semibold text-xs w-16">
-                          <span>  &lt; View only</span>
-                        </div>
-                      </th>
-                    ))
-                    } 
-                    {
-                      /*
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      1
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      2
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      3
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      4
-                    </th>
-                   */ }  
-                  </>
-                ) : (
-                  <>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                  </>
-                )}
-                <th className="w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {persons.map((person) => (
-                <tr
-                  key={person.id}
-                  className="border-b border-gray-100"
-                >
-                  <td className="py-2 px-2">
-                    <Input
-                      value={person.name}
-                      onChange={(e) =>
-                        handleLynxPersonChange(
-                          section,
-                          person.id,
-                          "name",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="Last Name"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      value={person.firstname}
-                      onChange={(e) =>
-                        handleLynxPersonChange(
-                          section,
-                          person.id,
-                          "firstname",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="First Name"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      type="email"
-                      value={person.email}
-                      onChange={(e) =>
-                        handleLynxPersonChange(
-                          section,
-                          person.id,
-                          "email",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="email@example.com"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      type="tel"
-                      value={person.phone}
-                      onChange={(e) =>
-                        handleLynxPersonChange(
-                          section,
-                          person.id,
-                          "phone",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="+1234567890"
-                    />
-                  </td>
-                  {[1, 2, 3, 4].map((right) => {
-                    const rightNum = right as 1 | 2 | 3 | 4;
-
-                    return (
-                      <td
-                        key={right}
-                        className="py-2 px-2 text-center"
-                      >
-                        <Checkbox
-                          checked={person.rights[rightNum]}
-                          onCheckedChange={() =>
-                            handleLynxRightChange(
-                              section,
-                              person.id,
-                              rightNum,
-                            )
-                          }
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-2 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        removeLynxPerson(section, person.id)
-                      }
-                      className="hover:bg-gray-100 p-1"
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-
-  // Render API Section
-  const renderAPISection = (
-    title: string,
-    section: "add" | "update" | "remove",
-    persons: APIPersonRow[],
-  ) => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-        <div className="flex items-center gap-4 flex-1">
-          <h3 className="text-base font-normal text-gray-900">
-            {title}
-          </h3>
-          {section === "add" && persons.length > 0 && (
-            <div className="flex flex-col flex-end gap-3 text-xs text-gray-600">
-              <div className="flex items-center gap-1">
-                <span>View only via REST API</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Requesting whitelisting of wallet address</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Instruct transfer of crypto assets and FIAT</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Trading rights via REST API</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Staking rights via REST API</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Trading rights via FIX API</span>
-              </div>
-            </div>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => addAPIPerson(section)}
-          className="hover:bg-gray-100 p-1"
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {persons.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  Name
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  First Name
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  E-Mail Address
-                </th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">
-                  Phone Number
-                </th>
-                {section === "add" ? (
-                  <>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      1
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      2
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      3
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      4
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      5
-                    </th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16">
-                      6
-                    </th>
-                  </>
-                ) : (
-                  <>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    <th className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                  </>
-                )}
-                <th className="w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {persons.map((person) => (
-                <tr
-                  key={person.id}
-                  className="border-b border-gray-100"
-                >
-                  <td className="py-2 px-2">
-                    <Input
-                      value={person.name}
-                      onChange={(e) =>
-                        handleAPIPersonChange(
-                          section,
-                          person.id,
-                          "name",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="Last Name"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      value={person.firstname}
-                      onChange={(e) =>
-                        handleAPIPersonChange(
-                          section,
-                          person.id,
-                          "firstname",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="First Name"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      type="email"
-                      value={person.email}
-                      onChange={(e) =>
-                        handleAPIPersonChange(
-                          section,
-                          person.id,
-                          "email",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="email@example.com"
-                    />
-                  </td>
-                  <td className="py-2 px-2">
-                    <Input
-                      type="tel"
-                      value={person.phone}
-                      onChange={(e) =>
-                        handleAPIPersonChange(
-                          section,
-                          person.id,
-                          "phone",
-                          e.target.value,
-                        )
-                      }
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="+1234567890"
-                    />
-                  </td>
-                  {[1, 2, 3, 4, 5, 6].map((right) => {
-                    const rightNum = right as
-                      | 1
-                      | 2
-                      | 3
-                      | 4
-                      | 5
-                      | 6;
-
-                    return (
-                      <td
-                        key={right}
-                        className="py-2 px-2 text-center"
-                      >
-                        <Checkbox
-                          checked={person.rights[rightNum]}
-                          onCheckedChange={() =>
-                            handleAPIRightChange(
-                              section,
-                              person.id,
-                              rightNum,
-                            )
-                          }
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-2 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        removeAPIPerson(section, person.id)
-                      }
-                      className="hover:bg-gray-100 p-1"
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="w-full max-w-6xl mx-auto px-8 py-12 relative form-page">
@@ -743,7 +79,7 @@ export function LynxAPIForm() {
         </div>
 
         {/* Form Content */}
-        <div className="px-8 pt-8 pb-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-8 pt-8 pb-8">
           {/* Section 3: Lynx User Interface */}
           <div className="mb-12">
             <h2 className="text-lg font-semibold mb-4">
@@ -756,29 +92,40 @@ export function LynxAPIForm() {
               scope of the rights explicitly granted by
               selecting one or more of the following:
             </p>
-            <ol className="list-decimal ml-6 space-y-1 text-sm text-gray-700 mb-6">
-              <li>View only</li>
-              <li>Transfer of crypto assets and FIAT</li>
-              <li>Trading rights</li>
-              <li>Staking rights</li>
-            </ol>
 
-            {/* Lynx Add Section */}
-            {renderLynxSection("Add", "add", addLynxPersons)}
-
-            {/* Lynx Update Section */}
-            {renderLynxSection(
-              "Update",
-              "update",
-              updateLynxPersons,
-            )}
-
-            {/* Lynx Remove Section */}
-            {renderLynxSection(
-              "Remove",
-              "remove",
-              removeLynxPersons,
-            )}
+            <RightsTable 
+              title="Add" 
+              name="addLynxPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={LYNX_RIGHTS}
+              headerHeightClass="h-32"
+            />
+            <RightsTable 
+              title="Update" 
+              name="updateLynxPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={LYNX_RIGHTS}
+              headerHeightClass="h-32"
+            />
+            <RightsTable 
+              title="Remove" 
+              name="removeLynxPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={LYNX_RIGHTS}
+              headerHeightClass="h-32"
+            />
           </div>
 
           {/* Section 4: API Portal Access Rights */}
@@ -812,24 +159,41 @@ export function LynxAPIForm() {
               </ol>
             </div>
 
-            {/* API Add Section */}
-            {renderAPISection("Add", "add", addAPIPersons)}
-
-            {/* API Update Section */}
-            {renderAPISection(
-              "Update",
-              "update",
-              updateAPIPersons,
-            )}
-
-            {/* API Remove Section */}
-            {renderAPISection(
-              "Remove",
-              "remove",
-              removeAPIPersons,
-            )}
+            <RightsTable 
+              title="Add" 
+              name="addAPIPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={API_RIGHTS}
+              headerHeightClass="h-48"
+            />
+            <RightsTable 
+              title="Update" 
+              name="updateAPIPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={API_RIGHTS}
+              headerHeightClass="h-48"
+            />
+            <RightsTable 
+              title="Remove" 
+              name="removeAPIPersons" 
+              control={control} 
+              register={register} 
+              setValue={setValue}
+              getValues={getValues}
+              errors={errors}
+              rightsConfig={API_RIGHTS}
+              headerHeightClass="h-48"
+            />
           </div>
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="px-8 py-6 border-t bg-white">
@@ -840,6 +204,203 @@ export function LynxAPIForm() {
           </p>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+interface RightsTableProps {
+  title: string;
+  name: "addLynxPersons" | "updateLynxPersons" | "removeLynxPersons" | "addAPIPersons" | "updateAPIPersons" | "removeAPIPersons";
+  control: Control<LynxAPIValues>;
+  register: any;
+  setValue: UseFormSetValue<LynxAPIValues>;
+  getValues: UseFormGetValues<LynxAPIValues>;
+  errors: any;
+  rightsConfig: { key: string; label: string }[];
+  headerHeightClass: string;
+}
+
+function RightsTable({ title, name, control, register, setValue, getValues, errors, rightsConfig, headerHeightClass }: RightsTableProps) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name,
+  });
+
+  const handleCheckboxChange = (
+    index: number,
+    field: string,
+    checked: boolean
+  ) => {
+    const rightsPath = `${name}.${index}.rights`;
+    
+    if (field === "viewOnly") {
+      if (checked) {
+        // If View Only is selected, deselect others
+        rightsConfig.forEach(right => {
+          if (right.key !== "viewOnly") {
+            setValue(`${rightsPath}.${right.key}` as any, false);
+          }
+        });
+        setValue(`${rightsPath}.viewOnly` as any, true);
+      } else {
+        setValue(`${rightsPath}.viewOnly` as any, false);
+      }
+    } else {
+      if (checked) {
+        // If any other is selected, deselect View Only
+        setValue(`${rightsPath}.viewOnly` as any, false);
+        setValue(`${rightsPath}.${field}` as any, true);
+      } else {
+        setValue(`${rightsPath}.${field}` as any, false);
+      }
+    }
+  };
+
+  const createNewItem = () => {
+    const baseItem = {
+      id: `${name}-${Date.now()}`,
+      name: "",
+      firstname: "",
+      email: "",
+      phone: "",
+    };
+    
+    const rights = rightsConfig.reduce((acc, right) => {
+      acc[right.key] = false;
+      return acc;
+    }, {} as any);
+
+    return { ...baseItem, rights };
+  };
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+        <div className="flex items-center gap-4 flex-1">
+          <h3 className="text-base font-normal text-gray-900">
+            {title}
+          </h3>
+          {title === "Add" && fields.length > 0 && (
+            <div className="flex flex-col flex-end gap-3 text-xs text-gray-600">
+            </div>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => append(createNewItem())}
+          className="hover:bg-gray-100 p-1"
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {fields.length > 0 && (
+        <div className="overflow-y-visible">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-gray-300">
+                <th className="text-left py-2 px-2 font-semibold text-xs">Name</th>
+                <th className="text-left py-2 px-2 font-semibold text-xs">First Name</th>
+                <th className="text-left py-2 px-2 font-semibold text-xs">E-Mail Address</th>
+                <th className="text-left py-2 px-2 font-semibold text-xs">Phone Number</th>
+                {title === "Add" ? (
+                  <>
+                    {rightsConfig.map((right, index) => (
+                      <th key={index} className={`relative ${headerHeightClass} align-bottom pb-2`}>
+                        <div className="flex items-end justify-center h-full">
+                          <span className="text-xs font-semibold text-gray-700 [writing-mode:vertical-rl] rotate-180 whitespace-nowrap">
+                            {right.label}
+                          </span>
+                        </div>
+                      </th>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {rightsConfig.map((_, index) => (
+                      <th key={index} className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
+                    ))}
+                  </>
+                )}
+                <th className="w-12"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {fields.map((field, index) => (
+                <tr key={field.id} className="border-b border-gray-100">
+                  <td className="py-2 px-2">
+                    <Input
+                      {...register(`${name}.${index}.name`)}
+                      className="border-gray-300 h-8 text-xs"
+                      placeholder="Last Name"
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <Input
+                      {...register(`${name}.${index}.firstname`)}
+                      className="border-gray-300 h-8 text-xs"
+                      placeholder="First Name"
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <Input
+                      type="email"
+                      {...register(`${name}.${index}.email`)}
+                      className="border-gray-300 h-8 text-xs"
+                      placeholder="email@example.com"
+                    />
+                    {errors[name]?.[index]?.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[name][index].email.message}
+                      </p>
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    <Input
+                      type="tel"
+                      {...register(`${name}.${index}.phone`)}
+                      className="border-gray-300 h-8 text-xs"
+                      placeholder="+1234567890"
+                    />
+                    {errors[name]?.[index]?.phone && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[name][index].phone.message}
+                      </p>
+                    )}
+                  </td>
+                  {rightsConfig.map((right) => (
+                    <td key={right.key} className="py-2 px-2 text-center">
+                      <Controller
+                        name={`${name}.${index}.rights.${right.key}` as any}
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={(checked) => handleCheckboxChange(index, right.key, checked as boolean)} 
+                          />
+                        )}
+                      />
+                    </td>
+                  ))}
+                  <td className="py-2 px-2 text-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      className="hover:bg-gray-100 p-1"
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

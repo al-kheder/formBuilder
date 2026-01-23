@@ -1,23 +1,28 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/app/components/ui/input';
 import { SignatureCanvas } from '@/app/components/SignatureCanvas';
 import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
+import { ScopeAuthoritySchema, type ScopeAuthorityValues } from '@/lib/schemas/ScopeAuthoritySchema';
 
 export function ScopeAuthorityForm() {
-  const [signature1, setSignature1] = useState({
-    name: '',
-    date: '',
-    place: '',
-    signature: '',
+  const {
+    register,
+    control,
+    handleSubmit,
+  } = useForm<ScopeAuthorityValues>({
+    resolver: zodResolver(ScopeAuthoritySchema),
+    defaultValues: {
+      signature1: { name: '', date: '', place: '', signature: '' },
+      signature2: { name: '', date: '', place: '', signature: '' },
+    },
+    mode: 'onBlur',
   });
 
-  const [signature2, setSignature2] = useState({
-    name: '',
-    date: '',
-    place: '',
-    signature: '',
-  });
+  const onSubmit = (data: ScopeAuthorityValues) => {
+    console.log('Form submitted:', data);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto px-8 py-12 relative form-page">
@@ -40,7 +45,7 @@ export function ScopeAuthorityForm() {
         </div>
 
         {/* Form Content */}
-        <div className="px-12 pt-10 pb-10">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-12 pt-10 pb-10">
           {/* Scope of Authority Section */}
           <div className="mb-8">
             <h2 className="text-base font-bold mb-4">Scope of Authority</h2>
@@ -98,10 +103,7 @@ export function ScopeAuthorityForm() {
                     Name of Authorized Signatory
                   </label>
                   <Input
-                    value={signature1.name}
-                    onChange={(e) =>
-                      setSignature1({ ...signature1, name: e.target.value })
-                    }
+                    {...register('signature1.name')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -111,10 +113,7 @@ export function ScopeAuthorityForm() {
                   </label>
                   <Input
                     type="date"
-                    value={signature1.date}
-                    onChange={(e) =>
-                      setSignature1({ ...signature1, date: e.target.value })
-                    }
+                    {...register('signature1.date')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -123,10 +122,7 @@ export function ScopeAuthorityForm() {
                     Place
                   </label>
                   <Input
-                    value={signature1.place}
-                    onChange={(e) =>
-                      setSignature1({ ...signature1, place: e.target.value })
-                    }
+                    {...register('signature1.place')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -136,12 +132,16 @@ export function ScopeAuthorityForm() {
                 <label className="text-xs italic text-gray-600 mb-2 block">
                   Authorized Signature
                 </label>
-                <SignatureCanvas
-                  width={200}
-                  height={80}
-                  onSignatureChange={(sig) =>
-                    setSignature1({ ...signature1, signature: sig })
-                  }
+                <Controller
+                  name="signature1.signature"
+                  control={control}
+                  render={({ field }) => (
+                    <SignatureCanvas
+                      width={200}
+                      height={80}
+                      onSignatureChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -155,10 +155,7 @@ export function ScopeAuthorityForm() {
                     Name of Authorized Signatory
                   </label>
                   <Input
-                    value={signature2.name}
-                    onChange={(e) =>
-                      setSignature2({ ...signature2, name: e.target.value })
-                    }
+                    {...register('signature2.name')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -168,10 +165,7 @@ export function ScopeAuthorityForm() {
                   </label>
                   <Input
                     type="date"
-                    value={signature2.date}
-                    onChange={(e) =>
-                      setSignature2({ ...signature2, date: e.target.value })
-                    }
+                    {...register('signature2.date')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -180,10 +174,7 @@ export function ScopeAuthorityForm() {
                     Place
                   </label>
                   <Input
-                    value={signature2.place}
-                    onChange={(e) =>
-                      setSignature2({ ...signature2, place: e.target.value })
-                    }
+                    {...register('signature2.place')}
                     className="border-gray-300 h-8 text-sm"
                   />
                 </div>
@@ -193,17 +184,21 @@ export function ScopeAuthorityForm() {
                 <label className="text-xs italic text-gray-600 mb-2 block">
                   Authorized Signature
                 </label>
-                <SignatureCanvas
-                  width={200}
-                  height={80}
-                  onSignatureChange={(sig) =>
-                    setSignature2({ ...signature2, signature: sig })
-                  }
+                <Controller
+                  name="signature2.signature"
+                  control={control}
+                  render={({ field }) => (
+                    <SignatureCanvas
+                      width={200}
+                      height={80}
+                      onSignatureChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
           </div>
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="px-12 py-6 border-t">

@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@/app/components/ui/label';
 import { Input } from '@/app/components/ui/input';
-import { Checkbox } from '@/app/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/app/components/ui/radio-group';
 import { Autocomplete } from '@/app/components/ui/autocomplete';
 import { MultiSelect } from '@/app/components/ui/multi-select';
@@ -11,151 +12,67 @@ import { addToAutocompleteHistory, mergeOptionsWithHistory } from '@/data/autoco
 import { countries, streetNames, getCitiesForCountry, getCountryForCity } from '@/data/locations';
 import { getAllPositions } from '@/data/positions';
 import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
+import { PersonSchema, type PersonValues } from '@/lib/schemas/PersonSchema';
 
 interface PersonFormProps {
   personNumber?: number;
 }
 
 export function PersonForm({ personNumber = 2 }: PersonFormProps) {
-  const [formData, setFormData] = useState({
-    action: '', // Changed from object to string ('add', 'update', 'remove', or '')
-    firstName: '',
-    lastName: '',
-    dateOfBirth: '',
-    idDocument: '',
-    nationalities: [] as string[], // Changed to array for multiple selections
-    street: '',
-    city: '',
-    zipCode: '',
-    country: '',
-    businessEmail: '',
-    businessPhone: '',
-    mobilePhone: '',
-    position: '',
-    signaturePower: '', // Changed to single string value: 'none', 'sole', or 'jointly'
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<PersonValues>({
+    resolver: zodResolver(PersonSchema),
+    defaultValues: {
+      action: '',
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      idDocument: '',
+      nationalities: [],
+      street: '',
+      zipCode: '',
+      city: '',
+      country: '',
+      businessEmail: '',
+      businessPhone: '',
+      mobilePhone: '',
+      position: '',
+      signaturePower: '',
+      signature: '',
+    },
+    mode: 'onBlur',
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const watchedCountry = watch('country');
+  const watchedCity = watch('city');
 
   // Merge predefined options with user history
   const streetOptions = useMemo(() => mergeOptionsWithHistory('street', streetNames), []);
   const cityOptions = useMemo(() => {
-    const citiesForCountry = getCitiesForCountry(formData.country);
+    const citiesForCountry = getCitiesForCountry(watchedCountry);
     return mergeOptionsWithHistory('city', citiesForCountry);
-  }, [formData.country]);
+  }, [watchedCountry]);
   const countryOptions = useMemo(() => mergeOptionsWithHistory('country', countries), []);
   const positionOptions = useMemo(() => getAllPositions(), []);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^[\d\s\+\-\(\)]+$/;
-    return phone.length === 0 || phoneRegex.test(phone);
-  };
-
-  const validateNumeric = (value: string): boolean => {
-    return /^\d+$/.test(value);
-  };
-
-  const validateField = (field: string, value: any) => {
-    let error = '';
-
-    switch (field) {
-      case 'firstName':
-        if (!value || !value.trim()) error = 'First name is required';
-        break;
-      case 'lastName':
-        if (!value || !value.trim()) error = 'Last name is required';
-        break;
-      case 'businessEmail':
-        if (value && !validateEmail(value)) error = 'Invalid email format';
-        break;
-      case 'businessPhone':
-      case 'mobilePhone':
-        if (value && !validatePhone(value)) error = 'Phone number can only contain digits, spaces, +, -, ( )';
-        break;
-      case 'zipCode':
-        if (value && !validateNumeric(value)) error = 'Zip code must contain only numbers';
-        break;
-      case 'idDocument':
-        if (value && !validateNumeric(value)) error = 'ID document number must contain only numbers';
-        break;
-      case 'dateOfBirth':
-        if (!value) error = 'Date of birth is required';
-        break;
-      case 'nationalities':
-        if (!Array.isArray(value) || value.length === 0) error = 'At least one nationality is required';
-        if (Array.isArray(value) && value.length > 3) error = 'Maximum of 3 nationalities allowed';
-        break;
-    }
-
-    setErrors((prev) => ({
-      ...prev,
-      [field]: error,
-    }));
-  };
-
-  const handleBlur = (field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    const value = formData[field as keyof typeof formData];
-    validateField(field, value);
-  };
-
-  const handleActionChange = (action: 'add' | 'update' | 'remove') => {
-    setFormData((prev) => ({
-      ...prev,
-      action: action, // Set the action directly
-    }));
-  };
-
-  const handleSignatureChange = (type: 'none' | 'sole' | 'jointly') => {
-    setFormData((prev) => ({
-      ...prev,
-      signaturePower: type,
-    }));
-  };
-
-  const handleInputChange = (field: string, value: string | string[]) => {
-    if (field === 'nationalities') {
-      // Handle nationality array updates
-      setFormData((prev) => ({
-        ...prev,
-        nationalities: value as string[],
-      }));
-      // Validate nationalities
-      setTouched((prev) => ({ ...prev, nationalities: true }));
-      validateField('nationalities', value);
-    } else if (field === 'country') {
-      // When country changes, keep the city value even if it's not in the filtered list
-      // This allows users to enter custom cities
-      setFormData((prev) => ({
-        ...prev,
-        country: value as string,
-      }));
-    } else if (field === 'city') {
-      // When city changes, auto-select the corresponding country if city is in the list
-      const countryForCity = getCountryForCity(value as string);
+  // Effect to auto-select country when city changes
+  useEffect(() => {
+    if (watchedCity) {
+      const countryForCity = getCountryForCity(watchedCity);
       if (countryForCity) {
-        // City is in the predefined list, auto-set country
-        setFormData((prev) => ({
-          ...prev,
-          city: value as string,
-          country: countryForCity,
-        }));
-      } else {
-        // City is custom (not in list), just update the city
-        setFormData((prev) => ({
-          ...prev,
-          city: value as string,
-        }));
+        setValue('country', countryForCity, { shouldValidate: true });
       }
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }));
     }
+  }, [watchedCity, setValue]);
+
+  const onSubmit = (data: PersonValues) => {
+    console.log('Form submitted:', data);
   };
 
   return (
@@ -171,7 +88,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
         </div>
 
         {/* Form Content */}
-        <div className="px-8 py-8 pt-24">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-8 py-8 pt-24">
           {/* Person Label */}
           <div className="mb-6">
             <h2 className="text-base font-normal">Person {personNumber}:</h2>
@@ -179,35 +96,45 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
           {/* Action Section */}
           <div className="mb-8 pb-6 border-b-2 border-gray-200">
-            <RadioGroup value={formData.action} onValueChange={handleActionChange} className="flex gap-8">
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => formData.action === 'add' && handleActionChange('')}
-              >
-                <RadioGroupItem value="add" id="add-person2" />
-                <Label htmlFor="add-person2" className="cursor-pointer text-base">
-                  Add
-                </Label>
-              </div>
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => formData.action === 'update' && handleActionChange('')}
-              >
-                <RadioGroupItem value="update" id="update-person2" />
-                <Label htmlFor="update-person2" className="cursor-pointer text-base">
-                  Update
-                </Label>
-              </div>
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => formData.action === 'remove' && handleActionChange('')}
-              >
-                <RadioGroupItem value="remove" id="remove-person2" />
-                <Label htmlFor="remove-person2" className="cursor-pointer text-base">
-                  Remove
-                </Label>
-              </div>
-            </RadioGroup>
+            <Controller
+              name="action"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup 
+                  value={field.value} 
+                  onValueChange={field.onChange} 
+                  className="flex gap-8"
+                >
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => field.value === 'add' && field.onChange('')}
+                  >
+                    <RadioGroupItem value="add" id={`add-person${personNumber}`} />
+                    <Label htmlFor={`add-person${personNumber}`} className="cursor-pointer text-base">
+                      Add
+                    </Label>
+                  </div>
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => field.value === 'update' && field.onChange('')}
+                  >
+                    <RadioGroupItem value="update" id={`update-person${personNumber}`} />
+                    <Label htmlFor={`update-person${personNumber}`} className="cursor-pointer text-base">
+                      Update
+                    </Label>
+                  </div>
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => field.value === 'remove' && field.onChange('')}
+                  >
+                    <RadioGroupItem value="remove" id={`remove-person${personNumber}`} />
+                    <Label htmlFor={`remove-person${personNumber}`} className="cursor-pointer text-base">
+                      Remove
+                    </Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
           </div>
 
           {/* Personal Information Fields */}
@@ -219,17 +146,16 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 </Label>
                 <Input
                   id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[0-9]/g, '');
-                    handleInputChange('firstName', value);
-                  }}
-                  onBlur={() => handleBlur('firstName')}
+                  {...register('firstName', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/[0-9]/g, '');
+                    }
+                  })}
                   className="border-gray-300"
                   placeholder="e.g., John"
                 />
-                {touched.firstName && errors.firstName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                {errors.firstName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
                 )}
               </div>
               <div>
@@ -238,17 +164,16 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 </Label>
                 <Input
                   id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[0-9]/g, '');
-                    handleInputChange('lastName', value);
-                  }}
-                  onBlur={() => handleBlur('lastName')}
+                  {...register('lastName', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/[0-9]/g, '');
+                    }
+                  })}
                   className="border-gray-300"
                   placeholder="e.g., Smith"
                 />
-                {touched.lastName && errors.lastName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                {errors.lastName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
@@ -261,13 +186,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 <Input
                   id="dateOfBirth"
                   type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  onBlur={() => handleBlur('dateOfBirth')}
+                  {...register('dateOfBirth')}
                   className="border-gray-300"
                 />
-                {touched.dateOfBirth && errors.dateOfBirth && (
-                  <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>
+                {errors.dateOfBirth && (
+                  <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth.message}</p>
                 )}
               </div>
               <div>
@@ -276,14 +199,12 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 </Label>
                 <Input
                   id="idDocument"
-                  value={formData.idDocument}
-                  onChange={(e) => handleInputChange('idDocument', e.target.value)}
-                  onBlur={() => handleBlur('idDocument')}
+                  {...register('idDocument')}
                   className="border-gray-300"
                   placeholder="e.g., 123456789"
                 />
-                {touched.idDocument && errors.idDocument && (
-                  <p className="text-red-500 text-sm mt-1">{errors.idDocument}</p>
+                {errors.idDocument && (
+                  <p className="text-red-500 text-sm mt-1">{errors.idDocument.message}</p>
                 )}
               </div>
             </div>
@@ -293,17 +214,23 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 <Label htmlFor="nationalities" className="text-sm mb-1 block">
                   Nationality(-ies):
                 </Label>
-                <MultiSelect
-                  id="nationalities"
-                  value={formData.nationalities}
-                  onChange={(value) => handleInputChange('nationalities', value)}
-                  options={countryOptions}
-                  className="border-gray-300"
-                  placeholder="Select or type nationality..."
-                  maxSelections={3}
+                <Controller
+                  name="nationalities"
+                  control={control}
+                  render={({ field }) => (
+                    <MultiSelect
+                      id="nationalities"
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={countryOptions}
+                      className="border-gray-300"
+                      placeholder="Select or type nationality..."
+                      maxSelections={3}
+                    />
+                  )}
                 />
-                {touched.nationalities && errors.nationalities && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nationalities}</p>
+                {errors.nationalities && (
+                  <p className="text-red-500 text-sm mt-1">{errors.nationalities.message}</p>
                 )}
               </div>
               <div>
@@ -321,14 +248,20 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 <Label htmlFor="street" className="text-sm mb-1 block">
                   Street with street no.:
                 </Label>
-                <Autocomplete
-                  id="street"
-                  value={formData.street}
-                  onChange={(value) => handleInputChange('street', value)}
-                  options={streetOptions}
-                  className="border-gray-300"
-                  onValueCommit={(value) => addToAutocompleteHistory('street', value)}
-                  placeholder="e.g., Beethovenstrasse 24"
+                <Controller
+                  name="street"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      id="street"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      options={streetOptions}
+                      className="border-gray-300"
+                      onValueCommit={(value) => addToAutocompleteHistory('street', value)}
+                      placeholder="e.g., Beethovenstrasse 24"
+                    />
+                  )}
                 />
               </div>
 
@@ -337,15 +270,21 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   <Label htmlFor="city" className="text-sm mb-1 block">
                     City:
                   </Label>
-                  <Autocomplete
-                    id="city"
-                    value={formData.city}
-                    onChange={(value) => handleInputChange('city', value)}
-                    options={cityOptions}
-                    className="border-gray-300"
-                    onValueCommit={(value) => addToAutocompleteHistory('city', value)}
-                    filterInput={(value) => value.replace(/[0-9]/g, '')}
-                    placeholder="e.g., Zurich"
+                  <Controller
+                    name="city"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        id="city"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        options={cityOptions}
+                        className="border-gray-300"
+                        onValueCommit={(value) => addToAutocompleteHistory('city', value)}
+                        filterInput={(value) => value.replace(/[0-9]/g, '')}
+                        placeholder="e.g., Zurich"
+                      />
+                    )}
                   />
                 </div>
                 <div>
@@ -357,17 +296,16 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={formData.zipCode}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      handleInputChange('zipCode', value);
-                    }}
-                    onBlur={() => handleBlur('zipCode')}
+                    {...register('zipCode', {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.replace(/\D/g, '');
+                      }
+                    })}
                     className="border-gray-300"
                     placeholder="e.g., 8001"
                   />
-                  {touched.zipCode && errors.zipCode && (
-                    <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>
+                  {errors.zipCode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.zipCode.message}</p>
                   )}
                 </div>
               </div>
@@ -377,15 +315,21 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   <Label htmlFor="country" className="text-sm mb-1 block">
                     Country:
                   </Label>
-                  <Autocomplete
-                    id="country"
-                    value={formData.country}
-                    onChange={(value) => handleInputChange('country', value)}
-                    options={countryOptions}
-                    className="border-gray-300"
-                    onValueCommit={(value) => addToAutocompleteHistory('country', value)}
-                    filterInput={(value) => value.replace(/[0-9]/g, '')}
-                    placeholder="e.g., Switzerland"
+                  <Controller
+                    name="country"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        id="country"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        options={countryOptions}
+                        className="border-gray-300"
+                        onValueCommit={(value) => addToAutocompleteHistory('country', value)}
+                        filterInput={(value) => value.replace(/[0-9]/g, '')}
+                        placeholder="e.g., Switzerland"
+                      />
+                    )}
                   />
                 </div>
                 <div>
@@ -395,14 +339,12 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   <Input
                     id="businessEmail"
                     type="email"
-                    value={formData.businessEmail}
-                    onChange={(e) => handleInputChange('businessEmail', e.target.value)}
+                    {...register('businessEmail')}
                     className="border-gray-300"
-                    onBlur={() => handleBlur('businessEmail')}
                     placeholder="e.g., john.smith@company.com"
                   />
-                  {touched.businessEmail && errors.businessEmail && (
-                    <p className="text-red-500 text-sm mt-1">{errors.businessEmail}</p>
+                  {errors.businessEmail && (
+                    <p className="text-red-500 text-sm mt-1">{errors.businessEmail.message}</p>
                   )}
                 </div>
               </div>
@@ -415,14 +357,12 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   <Input
                     id="businessPhone"
                     type="tel"
-                    value={formData.businessPhone}
-                    onChange={(e) => handleInputChange('businessPhone', e.target.value)}
+                    {...register('businessPhone')}
                     className="border-gray-300"
-                    onBlur={() => handleBlur('businessPhone')}
                     placeholder="e.g., +41 44 123 4567"
                   />
-                  {touched.businessPhone && errors.businessPhone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.businessPhone}</p>
+                  {errors.businessPhone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.businessPhone.message}</p>
                   )}
                 </div>
                 <div>
@@ -432,14 +372,12 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   <Input
                     id="mobilePhone"
                     type="tel"
-                    value={formData.mobilePhone}
-                    onChange={(e) => handleInputChange('mobilePhone', e.target.value)}
+                    {...register('mobilePhone')}
                     className="border-gray-300"
-                    onBlur={() => handleBlur('mobilePhone')}
                     placeholder="e.g., +41 79 123 4567"
                   />
-                  {touched.mobilePhone && errors.mobilePhone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.mobilePhone}</p>
+                  {errors.mobilePhone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.mobilePhone.message}</p>
                   )}
                 </div>
               </div>
@@ -448,14 +386,20 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 <Label htmlFor="position" className="text-sm mb-1 block">
                   Function/position:
                 </Label>
-                <Autocomplete
-                  id="position"
-                  value={formData.position}
-                  onChange={(value) => handleInputChange('position', value)}
-                  options={positionOptions}
-                  className="border-gray-300"
-                  onValueCommit={(value) => addToAutocompleteHistory('position', value)}
-                  placeholder="Select or type position..."
+                <Controller
+                  name="position"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      id="position"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      options={positionOptions}
+                      className="border-gray-300"
+                      onValueCommit={(value) => addToAutocompleteHistory('position', value)}
+                      placeholder="Select or type position..."
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -465,44 +409,61 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
           <div className="mb-8">
             <div className="mb-5">
               <Label className="text-sm mb-3 block">Signature power and type:</Label>
-              <RadioGroup value={formData.signaturePower} onValueChange={(value) => handleSignatureChange(value as 'none' | 'sole' | 'jointly')}>
-                <div className="flex gap-6">
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => formData.signaturePower === 'none' && handleSignatureChange('')}
+              <Controller
+                name="signaturePower"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup 
+                    value={field.value} 
+                    onValueChange={field.onChange}
                   >
-                    <RadioGroupItem value="none" id="sig-none-p2" />
-                    <Label htmlFor="sig-none-p2" className="cursor-pointer text-sm">
-                      None
-                    </Label>
-                  </div>
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => formData.signaturePower === 'sole' && handleSignatureChange('')}
-                  >
-                    <RadioGroupItem value="sole" id="sig-sole-p2" />
-                    <Label htmlFor="sig-sole-p2" className="cursor-pointer text-sm">
-                      Sole
-                    </Label>
-                  </div>
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => formData.signaturePower === 'jointly' && handleSignatureChange('')}
-                  >
-                    <RadioGroupItem value="jointly" id="sig-jointly-p2" />
-                    <Label htmlFor="sig-jointly-p2" className="cursor-pointer text-sm">
-                      Jointly by two
-                    </Label>
-                  </div>
-                </div>
-              </RadioGroup>
+                    <div className="flex gap-6">
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => field.value === 'none' && field.onChange('')}
+                      >
+                        <RadioGroupItem value="none" id={`sig-none-p${personNumber}`} />
+                        <Label htmlFor={`sig-none-p${personNumber}`} className="cursor-pointer text-sm">
+                          None
+                        </Label>
+                      </div>
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => field.value === 'sole' && field.onChange('')}
+                      >
+                        <RadioGroupItem value="sole" id={`sig-sole-p${personNumber}`} />
+                        <Label htmlFor={`sig-sole-p${personNumber}`} className="cursor-pointer text-sm">
+                          Sole
+                        </Label>
+                      </div>
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => field.value === 'jointly' && field.onChange('')}
+                      >
+                        <RadioGroupItem value="jointly" id={`sig-jointly-p${personNumber}`} />
+                        <Label htmlFor={`sig-jointly-p${personNumber}`} className="cursor-pointer text-sm">
+                          Jointly by two
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
             </div>
 
             <div className="mb-8">
               <Label className="text-sm mb-3 block">
                 Please provide your signature here as a specimen signature:
               </Label>
-              <SignatureCanvas />
+              <Controller
+                name="signature"
+                control={control}
+                render={({ field }) => (
+                  <SignatureCanvas 
+                    onSignatureChange={field.onChange}
+                  />
+                )}
+              />
             </div>
 
             <div className="mb-6">
@@ -511,7 +472,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
               </p>
             </div>
           </div>
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="px-8 py-6 border-t">

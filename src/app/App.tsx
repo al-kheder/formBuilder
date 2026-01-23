@@ -1,264 +1,45 @@
 import { useState } from 'react';
-import { Settings, Copy, Trash2, X, Plus, RotateCcw, FileDown, Printer } from 'lucide-react';
+import { Settings, FileDown, Printer, Plus, X, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Input } from '@/app/components/ui/input';
-import { AuthorizedPersonForm } from '@/app/components/AuthorizedPersonForm';
+import { FormRenderer } from '@/app/components/FormRenderer';
 import { PersonForm } from '@/app/components/PersonForm';
-import { WalletBankAccountForm } from '@/app/components/WalletBankAccountForm';
-import { LynxAPIForm } from '@/app/components/LynxAPIForm';
-import { ScopeAuthorityForm } from '@/app/components/ScopeAuthorityForm';
-import { getAllPositions, getCustomPositions, addCustomPosition, removeCustomPosition } from '@/data/positions';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useFormPages, FormPage } from '@/hooks/useFormPages';
+import { usePositions } from '@/hooks/usePositions';
+import { usePdfExport } from '@/hooks/usePdfExport';
 
-interface FormPage {
-  id: string;
-  type: 'authorized' | 'person' | 'wallet' | 'lynx' | 'scope';
-  label: string;
-}
+const INITIAL_PAGES: FormPage[] = [
+  { id: 'auth-1', type: 'authorized', label: 'Authorized Person 1' },
+  { id: 'wallet-1', type: 'wallet', label: 'Wallet & Bank Account' },
+  { id: 'lynx-1', type: 'lynx', label: 'Lynx & API' },
+  { id: 'scope-1', type: 'scope', label: 'Scope of Authority' },
+];
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showPdfMenu, setShowPdfMenu] = useState(false);
-  const [customPositions, setCustomPositions] = useState<string[]>(getCustomPositions());
   const [newPosition, setNewPosition] = useState('');
-  const [pages, setPages] = useState<FormPage[]>([
-    { id: 'auth-1', type: 'authorized', label: 'Authorized Person 1' },
-    { id: 'wallet-1', type: 'wallet', label: 'Wallet & Bank Account' },
-    { id: 'lynx-1', type: 'lynx', label: 'Lynx & API' },
-    { id: 'scope-1', type: 'scope', label: 'Scope of Authority' },
-  ]);
-  const [removedPages, setRemovedPages] = useState<FormPage[]>([]);
   const [additionalPersons, setAdditionalPersons] = useState<number[]>([]);
 
-  const handleAddPosition = () => {
-    if (newPosition.trim() && !getAllPositions().includes(newPosition.trim())) {
-      addCustomPosition(newPosition.trim());
-      setCustomPositions(getCustomPositions());
-      setNewPosition('');
-    }
-  };
-
-  const handleRemovePosition = (position: string) => {
-    removeCustomPosition(position);
-    setCustomPositions(getCustomPositions());
-  };
-
-  const handleDuplicatePage = (pageId: string) => {
-    const pageIndex = pages.findIndex((p) => p.id === pageId);
-    if (pageIndex === -1) return;
-
-    const pageToDuplicate = pages[pageIndex];
-    const sameTypePages = pages.filter((p) => p.type === pageToDuplicate.type);
-    const newId = `${pageToDuplicate.type}-${Date.now()}`;
-    
-    // Generate a smart label based on the type
-    let newLabel: string;
-    if (pageToDuplicate.type === 'authorized' || pageToDuplicate.type === 'person') {
-      const personNumber = sameTypePages.length + 1;
-      newLabel = pageToDuplicate.type === 'authorized' 
-        ? `Authorized Person ${personNumber}`
-        : `Person ${personNumber}`;
-    } else {
-      newLabel = `${pageToDuplicate.label} (Copy)`;
-    }
-
-    const newPage: FormPage = {
-      id: newId,
-      type: pageToDuplicate.type,
-      label: newLabel,
-    };
-
-    // Insert after the duplicated page
-    const newPages = [...pages];
-    newPages.splice(pageIndex + 1, 0, newPage);
-    setPages(newPages);
-  };
-
-  const handleRemovePage = (pageId: string) => {
-    // Keep at least one form
-    if (pages.length <= 1) {
-      alert('You must keep at least one form page.');
-      return;
-    }
-    const removedPage = pages.find((p) => p.id === pageId);
-    if (removedPage) {
-      setRemovedPages([...removedPages, removedPage]);
-    }
-    setPages((prev) => prev.filter((p) => p.id !== pageId));
-  };
-
-  const handleRestorePage = (pageId: string) => {
-    const restoredPage = removedPages.find((p) => p.id === pageId);
-    if (restoredPage) {
-      setPages([...pages, restoredPage]);
-      setRemovedPages(removedPages.filter((p) => p.id !== pageId));
-    }
-  };
+  const { pages, removePage } = useFormPages(INITIAL_PAGES);
+  const { customPositions, addPosition, removePosition } = usePositions();
+  const { print, downloadPdf } = usePdfExport();
 
   const handlePrint = () => {
     setShowPdfMenu(false);
     setShowSettings(false);
-    // Small delay to allow settings panel to close
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    print();
   };
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     setShowPdfMenu(false);
     setShowSettings(false);
-    
-    // Small delay to allow settings panel to close
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Create a temporary style element to override oklch colors with RGB
-    const tempStyle = document.createElement('style');
-    tempStyle.id = 'pdf-capture-override';
-    tempStyle.innerHTML = `
-      .form-page,
-      .form-page * {
-        color: rgb(0, 0, 0) !important;
-        background-color: rgb(255, 255, 255) !important;
-        border-color: rgb(209, 213, 219) !important;
-      }
-      .form-page .bg-white {
-        background-color: rgb(255, 255, 255) !important;
-      }
-      .form-page .bg-gradient-to-br {
-        background: linear-gradient(to bottom right, rgb(248, 250, 252), rgb(239, 246, 255), rgb(238, 242, 255)) !important;
-      }
-      .form-page .bg-blue-600 {
-        background-color: rgb(37, 99, 235) !important;
-      }
-      .form-page .bg-blue-50 {
-        background-color: rgb(239, 246, 255) !important;
-      }
-      .form-page .bg-gray-50 {
-        background-color: rgb(249, 250, 251) !important;
-      }
-      .form-page .text-gray-900 {
-        color: rgb(17, 24, 39) !important;
-      }
-      .form-page .text-gray-800 {
-        color: rgb(31, 41, 55) !important;
-      }
-      .form-page .text-gray-700 {
-        color: rgb(55, 65, 81) !important;
-      }
-      .form-page .text-gray-600 {
-        color: rgb(75, 85, 99) !important;
-      }
-      .form-page .text-blue-600 {
-        color: rgb(37, 99, 235) !important;
-      }
-      .form-page .border-gray-200 {
-        border-color: rgb(229, 231, 235) !important;
-      }
-      .form-page .border-gray-300 {
-        border-color: rgb(209, 213, 219) !important;
-      }
-      .form-page input,
-      .form-page select,
-      .form-page textarea {
-        background-color: rgb(255, 255, 255) !important;
-        color: rgb(0, 0, 0) !important;
-        border-color: rgb(209, 213, 219) !important;
-      }
-      .form-page .shadow-2xl {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-      }
-    `;
-    document.head.appendChild(tempStyle);
-    
-    // Wait for styles to apply
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // A4 dimensions in mm
-    const a4Width = 210;
-    const a4Height = 297;
-    
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    // Get all form elements
-    const formElements = document.querySelectorAll('.form-page');
-    
-    for (let i = 0; i < formElements.length; i++) {
-      const element = formElements[i] as HTMLElement;
-      
-      try {
-        // Capture form as canvas with the override styles applied
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: element.scrollWidth,
-          windowHeight: element.scrollHeight,
-          onclone: (clonedDoc) => {
-            // Ensure the cloned document also has the override styles
-            const clonedStyle = clonedDoc.createElement('style');
-            clonedStyle.innerHTML = tempStyle.innerHTML;
-            clonedDoc.head.appendChild(clonedStyle);
-          },
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = a4Width;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Calculate scale to fit within A4
-        let finalHeight = imgHeight;
-        let finalWidth = imgWidth;
-        
-        if (imgHeight > a4Height) {
-          // If image is taller than A4, scale it down
-          finalHeight = a4Height;
-          finalWidth = (canvas.width * a4Height) / canvas.height;
-        }
-        
-        // Center the image on the page
-        const xOffset = (a4Width - finalWidth) / 2;
-        const yOffset = 0;
-        
-        // Add new page for each form (except the first one)
-        if (i > 0) {
-          pdf.addPage();
-        }
-        
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
-      } catch (error) {
-        console.error('Error capturing form:', error);
-      }
-    }
-    
-    // Remove the temporary style element
-    document.head.removeChild(tempStyle);
-    
-    // Download the PDF
-    pdf.save('crypto-finance-forms.pdf');
+    downloadPdf();
   };
 
-  const renderForm = (page: FormPage, index: number) => {
-    const personNumber = page.label.includes('Person') 
-      ? parseInt(page.label.match(/\d+/)?.[0] || '1')
-      : undefined;
-
-    switch (page.type) {
-      case 'authorized':
-        return <AuthorizedPersonForm key={page.id} personNumber={personNumber} />;
-      case 'person':
-        return <PersonForm key={page.id} personNumber={personNumber} />;
-      case 'wallet':
-        return <WalletBankAccountForm key={page.id} />;
-      case 'lynx':
-        return <LynxAPIForm key={page.id} />;
-      case 'scope':
-        return <ScopeAuthorityForm key={page.id} />;
-      default:
-        return null;
-    }
+  const onAddPosition = () => {
+    addPosition(newPosition);
+    setNewPosition('');
   };
 
   return (
@@ -300,9 +81,7 @@ export default function App() {
               <button
                 onClick={handlePrint}
                 className="w-full px-4 py-3 text-left transition-colors flex items-center gap-3 text-sm border-b border-gray-100"
-                style={{ 
-                  color: '#105173'
-                }}
+                style={{ color: '#105173' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f0f9ff';
                 }}
@@ -316,9 +95,7 @@ export default function App() {
               <button
                 onClick={handleDownloadPdf}
                 className="w-full px-4 py-3 text-left transition-colors flex items-center gap-3 text-sm"
-                style={{ 
-                  color: '#105173'
-                }}
+                style={{ color: '#105173' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f0f9ff';
                 }}
@@ -353,7 +130,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Manage Pages Section */}
           <div className="space-y-6">
             {/* Manage Positions Section */}
             <div>
@@ -362,7 +138,6 @@ export default function App() {
                 Add custom positions to the Function/Position dropdown field.
               </p>
 
-              {/* Add New Position */}
               <div className="flex gap-2 mb-4">
                 <Input
                   value={newPosition}
@@ -371,12 +146,12 @@ export default function App() {
                   className="flex-1 text-sm"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleAddPosition();
+                      onAddPosition();
                     }
                   }}
                 />
                 <button
-                  onClick={handleAddPosition}
+                  onClick={onAddPosition}
                   className="text-white px-3 py-2 rounded transition-all duration-300 hover:opacity-90"
                   style={{ backgroundColor: '#105173' }}
                   aria-label="Add position"
@@ -385,7 +160,6 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Custom Positions List */}
               {customPositions.length > 0 && (
                 <div className="border-t border-gray-200 pt-3">
                   <p className="text-xs font-medium text-gray-700 mb-2">Custom Positions:</p>
@@ -397,7 +171,7 @@ export default function App() {
                       >
                         <span className="text-gray-800 flex-1 truncate">{position}</span>
                         <button
-                          onClick={() => handleRemovePosition(position)}
+                          onClick={() => removePosition(position)}
                           className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                           aria-label={`Remove ${position}`}
                         >
@@ -426,7 +200,7 @@ export default function App() {
           
           return (
             <div key={page.id}>
-              {renderForm(page, index)}
+              <FormRenderer page={page} index={index} />
               
               {/* Render all additional persons */}
               {isAuthorizedForm && additionalPersons.map((personNum) => (
