@@ -36,7 +36,7 @@ export function WalletBankAccountForm() {
       >
         {/* Logo in top right */}
         <div className="absolute top-6 right-8 z-10">
-          <img src={logoImage} alt="Crypto Finance" className="h-10" />
+          <img src={logoImage} alt="Crypto Finance" className="h-16" />
         </div>
 
         {/* Header */}
@@ -64,40 +64,34 @@ export function WalletBankAccountForm() {
           </div>
 
           {/* Add Section */}
-          <PersonSection 
-            title="Add" 
-            name="addPersons" 
-            control={control} 
+          <PersonSection
+            title="Add"
+            name="addPersons"
+            control={control}
             register={register}
             errors={errors}
           />
 
           {/* Update Section */}
-          <PersonSection 
-            title="Update" 
-            name="updatePersons" 
-            control={control} 
+          <PersonSection
+            title="Update"
+            name="updatePersons"
+            control={control}
             register={register}
             errors={errors}
           />
 
           {/* Remove Section */}
-          <PersonSection 
-            title="Remove" 
-            name="removePersons" 
-            control={control} 
+          <PersonSection
+            title="Remove"
+            name="removePersons"
+            control={control}
             register={register}
             errors={errors}
           />
         </form>
 
-        {/* Footer */}
-        <div className="px-8 py-6 border-t">
-          <p className="text-xs text-gray-600">
-            Crypto Finance AG<br />
-            Authorized Persons | 01/10/2025
-          </p>
-        </div>
+
       </motion.div>
     </div>
   );

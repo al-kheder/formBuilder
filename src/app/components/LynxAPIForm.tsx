@@ -61,7 +61,7 @@ export function LynxAPIForm() {
           <img
             src={logoImage}
             alt="Crypto Finance"
-            className="h-10"
+            className="h-16"
           />
         </div>
 
@@ -93,33 +93,33 @@ export function LynxAPIForm() {
               selecting one or more of the following:
             </p>
 
-            <RightsTable 
-              title="Add" 
-              name="addLynxPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Add"
+              name="addLynxPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
               rightsConfig={LYNX_RIGHTS}
               headerHeightClass="h-32"
             />
-            <RightsTable 
-              title="Update" 
-              name="updateLynxPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Update"
+              name="updateLynxPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
               rightsConfig={LYNX_RIGHTS}
               headerHeightClass="h-32"
             />
-            <RightsTable 
-              title="Remove" 
-              name="removeLynxPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Remove"
+              name="removeLynxPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
@@ -137,7 +137,7 @@ export function LynxAPIForm() {
               The Client designates the below persons as API
               users with the numerically indicated rights.
             </p>
-            <div className="grid grid-cols-2 gap-x-8 mb-6">
+         {/*    <div className="grid grid-cols-2 gap-x-8 mb-6">
               <ol className="list-decimal ml-6 space-y-1 text-sm text-gray-700">
                 <li>View only via REST API</li>
                 <li>
@@ -157,35 +157,35 @@ export function LynxAPIForm() {
                 <li>Staking rights via REST API</li>
                 <li>Trading rights via FIX API</li>
               </ol>
-            </div>
+            </div> */}
 
-            <RightsTable 
-              title="Add" 
-              name="addAPIPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Add"
+              name="addAPIPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
               rightsConfig={API_RIGHTS}
               headerHeightClass="h-48"
             />
-            <RightsTable 
-              title="Update" 
-              name="updateAPIPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Update"
+              name="updateAPIPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
               rightsConfig={API_RIGHTS}
               headerHeightClass="h-48"
             />
-            <RightsTable 
-              title="Remove" 
-              name="removeAPIPersons" 
-              control={control} 
-              register={register} 
+            <RightsTable
+              title="Remove"
+              name="removeAPIPersons"
+              control={control}
+              register={register}
               setValue={setValue}
               getValues={getValues}
               errors={errors}
@@ -195,14 +195,7 @@ export function LynxAPIForm() {
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="px-8 py-6 border-t bg-white">
-          <p className="text-xs text-gray-600">
-            Crypto Finance AG
-            <br />
-            Authorized Persons | 01/10/2025
-          </p>
-        </div>
+
       </motion.div>
     </div>
   );
@@ -232,7 +225,7 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
     checked: boolean
   ) => {
     const rightsPath = `${name}.${index}.rights`;
-    
+
     if (field === "viewOnly") {
       if (checked) {
         // If View Only is selected, deselect others
@@ -264,7 +257,7 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
       email: "",
       phone: "",
     };
-    
+
     const rights = rightsConfig.reduce((acc, right) => {
       acc[right.key] = false;
       return acc;
@@ -301,29 +294,29 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-gray-300">
-                <th className="text-left py-2 px-2 font-semibold text-xs">Name</th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">First Name</th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">E-Mail Address</th>
-                <th className="text-left py-2 px-2 font-semibold text-xs">Phone Number</th>
-                {title === "Add" ? (
-                  <>
-                    {rightsConfig.map((right, index) => (
-                      <th key={index} className={`relative ${headerHeightClass} align-bottom pb-2`}>
-                        <div className="flex items-end justify-center h-full">
-                          <span className="text-xs font-semibold text-gray-700 [writing-mode:vertical-rl] rotate-180 whitespace-nowrap">
-                            {right.label}
+                <th className="text-left py-1 px-2 font-semibold text-xs">Name</th>
+                <th className="text-left py-1 px-2 font-semibold text-xs">First Name</th>
+                <th className="text-left py-1 px-2 font-semibold text-xs">E-Mail Address</th>
+                <th className="text-left py-1 px-2 font-semibold text-xs">Phone Number</th>
+                <>
+                  {rightsConfig.map((right, index) => (
+                    <th key={index} className={`relative align-bottom pb-2`}>
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center py-2 px-2 font-semibold text-xs w-12">
+                        <div className="group relative inline-block">
+                          <span
+                            className="text-xs font-semibold text-gray-300 hover:text-gray-800 [writing-mode:vertical-rl] rotate-180 whitespace-nowrap cursor-help"
+                          >
+                            {right.label.length > 18 ? `${right.label.substring(0, 15)}...` : right.label}
                           </span>
+                          <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50 shadow-lg">
+                            {right.label}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
                         </div>
-                      </th>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {rightsConfig.map((_, index) => (
-                      <th key={index} className="text-center py-2 px-2 font-semibold text-xs w-16"></th>
-                    ))}
-                  </>
-                )}
+                      </div>
+                    </th>
+                  ))}
+                </>
                 <th className="w-12"></th>
               </tr>
             </thead>
@@ -376,9 +369,9 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
                         name={`${name}.${index}.rights.${right.key}` as any}
                         control={control}
                         render={({ field }) => (
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={(checked) => handleCheckboxChange(index, right.key, checked as boolean)} 
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => handleCheckboxChange(index, right.key, checked as boolean)}
                           />
                         )}
                       />

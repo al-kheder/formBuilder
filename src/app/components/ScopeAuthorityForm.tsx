@@ -33,7 +33,7 @@ export function ScopeAuthorityForm() {
       >
         {/* Logo in top right */}
         <div className="absolute top-6 right-8 z-10">
-          <img src={logoImage} alt="Crypto Finance" className="h-10" />
+          <img src={logoImage} alt="Crypto Finance" className="h-16" />
         </div>
 
         {/* Header */}
@@ -200,13 +200,7 @@ export function ScopeAuthorityForm() {
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="px-12 py-6 border-t">
-          <p className="text-xs text-gray-600">
-            Crypto Finance AG<br />
-            Authorized Persons | 01/10/2025
-          </p>
-        </div>
+
       </motion.div>
     </div>
   );

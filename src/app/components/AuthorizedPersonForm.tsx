@@ -88,7 +88,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
       >
         {/* Logo in top right */}
         <div className="absolute top-6 right-8 z-10 logo">
-          <img src={logoImage} alt="Crypto Finance" className="h-10" />
+          <img src={logoImage} alt="Crypto Finance" className="h-16" />
         </div>
 
         {/* Header */}
@@ -145,7 +145,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   onValueChange={field.onChange}
                   className="flex gap-8"
                 >
-                  <div 
+                  <div
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'add' && field.onChange('')}
                   >
@@ -154,7 +154,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                       Add
                     </Label>
                   </div>
-                  <div 
+                  <div
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'update' && field.onChange('')}
                   >
@@ -163,7 +163,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                       Update
                     </Label>
                   </div>
-                  <div 
+                  <div
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'remove' && field.onChange('')}
                   >
@@ -461,19 +461,19 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
             <h2 className="text-sm uppercase tracking-wider mb-6" style={{ letterSpacing: '0.1em' }}>
               Signature
             </h2>
-            
+
             <div className="mb-6">
               <Label className="text-sm mb-3 block">Signature power and type</Label>
               <Controller
                 name="signaturePower"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup 
-                    value={field.value} 
+                  <RadioGroup
+                    value={field.value}
                     onValueChange={field.onChange}
                   >
                     <div className="flex gap-8">
-                      <div 
+                      <div
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'none' && field.onChange('')}
                       >
@@ -482,7 +482,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                           None
                         </Label>
                       </div>
-                      <div 
+                      <div
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'sole' && field.onChange('')}
                       >
@@ -491,7 +491,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                           Sole
                         </Label>
                       </div>
-                      <div 
+                      <div
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'jointly' && field.onChange('')}
                       >
@@ -512,7 +512,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                 name="signature"
                 control={control}
                 render={({ field }) => (
-                  <SignatureCanvas 
+                  <SignatureCanvas
                     onSignatureChange={field.onChange}
                   />
                 )}
@@ -527,13 +527,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="px-8 py-6 border-t">
-          <p className="text-xs text-gray-600">
-            Crypto Finance AG<br />
-            Authorized Persons | 01/10/2025
-          </p>
-        </div>
+
       </motion.div>
     </div>
   );
