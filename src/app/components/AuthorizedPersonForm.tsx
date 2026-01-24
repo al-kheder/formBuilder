@@ -10,7 +10,7 @@ import { MultiSelect } from '@/app/components/ui/multi-select';
 import { SignatureCanvas } from '@/app/components/SignatureCanvas';
 import { addToAutocompleteHistory, mergeOptionsWithHistory } from '@/data/autocomplete-history';
 import { countries, streetNames, getCitiesForCountry, getCountryForCity } from '@/data/locations';
-import { getAllPositions } from '@/data/positions';
+import { usePositions } from '@/hooks/usePositions';
 import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
 import { AuthorizedPersonSchema, type AuthorizedPersonValues } from '@/lib/schemas/AuthorizedPersonSchema';
 
@@ -62,7 +62,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
     return mergeOptionsWithHistory('city', citiesForCountry);
   }, [watchedCountry]);
   const countryOptions = useMemo(() => mergeOptionsWithHistory('country', countries), []);
-  const positionOptions = useMemo(() => getAllPositions(), []);
+  const { allPositions } = usePositions();
+  const positionOptions = useMemo(() => allPositions, [allPositions]);
 
   // Effect to auto-select country when city changes
   useEffect(() => {
