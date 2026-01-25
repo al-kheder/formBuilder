@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@/app/components/ui/label';
 import { Input } from '@/app/components/ui/input';
@@ -46,7 +46,8 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
       signaturePower: '',
       signature: '',
     },
-    mode: 'onBlur',
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const watchedCountry = watch('country');
@@ -71,7 +72,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
     }
   }, [watchedCity, setValue]);
 
-  const onSubmit = (data: PersonValues) => {
+  const onSubmit: SubmitHandler<PersonValues> = (data) => {
     console.log('Form submitted:', data);
   };
 
@@ -141,11 +142,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
           <div className="space-y-5 mb-8">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="firstName" className="text-sm mb-1 block">
+                <Label htmlFor={`firstName-${personNumber}`} className="text-sm mb-1 block">
                   First name(s):
                 </Label>
                 <Input
-                  id="firstName"
+                  id={`firstName-${personNumber}`}
                   {...register('firstName', {
                     onChange: (e) => {
                       e.target.value = e.target.value.replace(/[0-9]/g, '');
@@ -159,11 +160,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 )}
               </div>
               <div>
-                <Label htmlFor="lastName" className="text-sm mb-1 block">
+                <Label htmlFor={`lastName-${personNumber}`} className="text-sm mb-1 block">
                   Last name(s):
                 </Label>
                 <Input
-                  id="lastName"
+                  id={`lastName-${personNumber}`}
                   {...register('lastName', {
                     onChange: (e) => {
                       e.target.value = e.target.value.replace(/[0-9]/g, '');
@@ -180,11 +181,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="dateOfBirth" className="text-sm mb-1 block">
+                <Label htmlFor={`dateOfBirth-${personNumber}`} className="text-sm mb-1 block">
                   Date of birth:
                 </Label>
                 <Input
-                  id="dateOfBirth"
+                  id={`dateOfBirth-${personNumber}`}
                   type="date"
                   {...register('dateOfBirth')}
                   className="border-gray-300"
@@ -194,11 +195,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                 )}
               </div>
               <div>
-                <Label htmlFor="idDocument" className="text-sm mb-1 block">
+                <Label htmlFor={`idDocument-${personNumber}`} className="text-sm mb-1 block">
                   ID document number:
                 </Label>
                 <Input
-                  id="idDocument"
+                  id={`idDocument-${personNumber}`}
                   {...register('idDocument')}
                   className="border-gray-300"
                   placeholder="e.g., 123456789"
@@ -211,7 +212,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="nationalities" className="text-sm mb-1 block">
+                <Label htmlFor={`nationalities-${personNumber}`} className="text-sm mb-1 block">
                   Nationality(-ies):
                 </Label>
                 <Controller
@@ -219,7 +220,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   control={control}
                   render={({ field }) => (
                     <MultiSelect
-                      id="nationalities"
+                      id={`nationalities-${personNumber}`}
                       value={field.value}
                       onChange={field.onChange}
                       options={countryOptions}
@@ -245,7 +246,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
             <div className="space-y-5">
               <div>
-                <Label htmlFor="street" className="text-sm mb-1 block">
+                <Label htmlFor={`street-${personNumber}`} className="text-sm mb-1 block">
                   Street with street no.:
                 </Label>
                 <Controller
@@ -253,7 +254,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
-                      id="street"
+                      id={`street-${personNumber}`}
                       value={field.value || ''}
                       onChange={field.onChange}
                       options={streetOptions}
@@ -267,7 +268,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="city" className="text-sm mb-1 block">
+                  <Label htmlFor={`city-${personNumber}`} className="text-sm mb-1 block">
                     City:
                   </Label>
                   <Controller
@@ -275,7 +276,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                     control={control}
                     render={({ field }) => (
                       <Autocomplete
-                        id="city"
+                        id={`city-${personNumber}`}
                         value={field.value || ''}
                         onChange={field.onChange}
                         options={cityOptions}
@@ -288,11 +289,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="zipCode" className="text-sm mb-1 block">
+                  <Label htmlFor={`zipCode-${personNumber}`} className="text-sm mb-1 block">
                     Zip/postal code:
                   </Label>
                   <Input
-                    id="zipCode"
+                    id={`zipCode-${personNumber}`}
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -312,7 +313,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="country" className="text-sm mb-1 block">
+                  <Label htmlFor={`country-${personNumber}`} className="text-sm mb-1 block">
                     Country:
                   </Label>
                   <Controller
@@ -320,7 +321,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                     control={control}
                     render={({ field }) => (
                       <Autocomplete
-                        id="country"
+                        id={`country-${personNumber}`}
                         value={field.value || ''}
                         onChange={field.onChange}
                         options={countryOptions}
@@ -333,11 +334,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="businessEmail" className="text-sm mb-1 block">
+                  <Label htmlFor={`businessEmail-${personNumber}`} className="text-sm mb-1 block">
                     Business email(s):
                   </Label>
                   <Input
-                    id="businessEmail"
+                    id={`businessEmail-${personNumber}`}
                     type="email"
                     {...register('businessEmail')}
                     className="border-gray-300"
@@ -351,11 +352,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="businessPhone" className="text-sm mb-1 block">
+                  <Label htmlFor={`businessPhone-${personNumber}`} className="text-sm mb-1 block">
                     Business phone number(s):
                   </Label>
                   <Input
-                    id="businessPhone"
+                    id={`businessPhone-${personNumber}`}
                     type="tel"
                     {...register('businessPhone')}
                     className="border-gray-300"
@@ -366,11 +367,11 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="mobilePhone" className="text-sm mb-1 block">
+                  <Label htmlFor={`mobilePhone-${personNumber}`} className="text-sm mb-1 block">
                     Mobile phone number:
                   </Label>
                   <Input
-                    id="mobilePhone"
+                    id={`mobilePhone-${personNumber}`}
                     type="tel"
                     {...register('mobilePhone')}
                     className="border-gray-300"
@@ -383,7 +384,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
               </div>
 
               <div>
-                <Label htmlFor="position" className="text-sm mb-1 block">
+                <Label htmlFor={`position-${personNumber}`} className="text-sm mb-1 block">
                   Function/position:
                 </Label>
                 <Controller
@@ -391,7 +392,7 @@ export function PersonForm({ personNumber = 2 }: PersonFormProps) {
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
-                      id="position"
+                      id={`position-${personNumber}`}
                       value={field.value || ''}
                       onChange={field.onChange}
                       options={positionOptions}

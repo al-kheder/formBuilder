@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 export const PersonRowSchema = z.object({
   id: z.string(),
-  name: z.string().optional(),
-  firstname: z.string().optional(),
-  email: z.string().email({ message: 'Invalid email format' }).optional().or(z.literal('')),
-  phone: z.string().regex(/^[\d\s\+\-\(\)]*$/, { message: 'Phone number can only contain digits, spaces, +, -, ( )' }).optional(),
+  name: z.string(),
+  firstname: z.string(),
+  email: z.string(),
+  phone: z.string(),
 });
 
 export const WalletBankSchema = z.object({

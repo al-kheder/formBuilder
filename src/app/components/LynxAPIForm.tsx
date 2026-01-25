@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useForm, useFieldArray, Control, Controller, UseFormSetValue, UseFormGetValues } from "react-hook-form";
+import { useForm, useFieldArray, Control, Controller, UseFormSetValue, UseFormGetValues, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
@@ -42,10 +42,11 @@ export function LynxAPIForm() {
       updateAPIPersons: [],
       removeAPIPersons: [],
     },
-    mode: "onBlur",
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
-  const onSubmit = (data: LynxAPIValues) => {
+  const onSubmit: SubmitHandler<LynxAPIValues> = (data) => {
     console.log("Form submitted:", data);
   };
 
@@ -137,7 +138,7 @@ export function LynxAPIForm() {
               The Client designates the below persons as API
               users with the numerically indicated rights.
             </p>
-         {/*    <div className="grid grid-cols-2 gap-x-8 mb-6">
+            {/*    <div className="grid grid-cols-2 gap-x-8 mb-6">
               <ol className="list-decimal ml-6 space-y-1 text-sm text-gray-700">
                 <li>View only via REST API</li>
                 <li>

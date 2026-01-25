@@ -17,7 +17,8 @@ export function ScopeAuthorityForm() {
       signature1: { name: '', date: '', place: '', signature: '' },
       signature2: { name: '', date: '', place: '', signature: '' },
     },
-    mode: 'onBlur',
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = (data: ScopeAuthorityValues) => {

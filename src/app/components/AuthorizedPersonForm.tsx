@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@/app/components/ui/label';
 import { Input } from '@/app/components/ui/input';
@@ -25,7 +25,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, touchedFields },
+    formState: { errors },
   } = useForm<AuthorizedPersonValues>({
     resolver: zodResolver(AuthorizedPersonSchema),
     defaultValues: {
@@ -47,13 +47,12 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
       signaturePower: '',
       signature: '',
     },
-    mode: 'onBlur',
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const watchedCountry = watch('country');
   const watchedCity = watch('city');
-  const watchedAction = watch('action');
-  const watchedSignaturePower = watch('signaturePower');
 
   // Merge predefined options with user history
   const streetOptions = useMemo(() => mergeOptionsWithHistory('street', streetNames), []);
@@ -75,7 +74,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
     }
   }, [watchedCity, setValue]);
 
-  const onSubmit = (data: AuthorizedPersonValues) => {
+  const onSubmit: SubmitHandler<AuthorizedPersonValues> = (data) => {
     console.log('Form submitted:', data);
     // Handle form submission logic here
   };
@@ -105,11 +104,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
           {/* Client Name Section - Half width */}
           <div className="mb-6 grid grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="clientName" className="text-sm mb-2 block">
+              <Label htmlFor={`clientName-${personNumber}`} className="text-sm mb-2 block">
                 Client Name:
               </Label>
               <Input
-                id="clientName"
+                id={`clientName-${personNumber}`}
                 {...register('clientName')}
                 className="border-gray-300"
                 placeholder="e.g., ABC Corporation AG"
@@ -150,8 +149,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'add' && field.onChange('')}
                   >
-                    <RadioGroupItem value="add" id="add" />
-                    <Label htmlFor="add" className="cursor-pointer text-base">
+                    <RadioGroupItem value="add" id={`add-${personNumber}`} />
+                    <Label htmlFor={`add-${personNumber}`} className="cursor-pointer text-base">
                       Add
                     </Label>
                   </div>
@@ -159,8 +158,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'update' && field.onChange('')}
                   >
-                    <RadioGroupItem value="update" id="update" />
-                    <Label htmlFor="update" className="cursor-pointer text-base">
+                    <RadioGroupItem value="update" id={`update-${personNumber}`} />
+                    <Label htmlFor={`update-${personNumber}`} className="cursor-pointer text-base">
                       Update
                     </Label>
                   </div>
@@ -168,8 +167,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => field.value === 'remove' && field.onChange('')}
                   >
-                    <RadioGroupItem value="remove" id="remove" />
-                    <Label htmlFor="remove" className="cursor-pointer text-base">
+                    <RadioGroupItem value="remove" id={`remove-${personNumber}`} />
+                    <Label htmlFor={`remove-${personNumber}`} className="cursor-pointer text-base">
                       Remove
                     </Label>
                   </div>
@@ -186,11 +185,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="firstName" className="text-sm mb-2 block">
+                  <Label htmlFor={`firstName-${personNumber}`} className="text-sm mb-2 block">
                     First name(s):
                   </Label>
                   <Input
-                    id="firstName"
+                    id={`firstName-${personNumber}`}
                     {...register('firstName', {
                       onChange: (e) => {
                         e.target.value = e.target.value.replace(/[0-9]/g, '');
@@ -204,11 +203,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="lastName" className="text-sm mb-2 block">
+                  <Label htmlFor={`lastName-${personNumber}`} className="text-sm mb-2 block">
                     Last name(s):
                   </Label>
                   <Input
-                    id="lastName"
+                    id={`lastName-${personNumber}`}
                     {...register('lastName', {
                       onChange: (e) => {
                         e.target.value = e.target.value.replace(/[0-9]/g, '');
@@ -225,11 +224,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="dateOfBirth" className="text-sm mb-2 block">
+                  <Label htmlFor={`dateOfBirth-${personNumber}`} className="text-sm mb-2 block">
                     Date of birth
                   </Label>
                   <Input
-                    id="dateOfBirth"
+                    id={`dateOfBirth-${personNumber}`}
                     type="date"
                     {...register('dateOfBirth')}
                     className="border-gray-300"
@@ -239,11 +238,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="idDocument" className="text-sm mb-2 block">
+                  <Label htmlFor={`idDocument-${personNumber}`} className="text-sm mb-2 block">
                     ID document number
                   </Label>
                   <Input
-                    id="idDocument"
+                    id={`idDocument-${personNumber}`}
                     {...register('idDocument')}
                     className="border-gray-300"
                     placeholder="e.g., 123456789"
@@ -256,7 +255,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="nationalities" className="text-sm mb-2 block">
+                  <Label htmlFor={`nationalities-${personNumber}`} className="text-sm mb-2 block">
                     Nationality(-ies)
                   </Label>
                   <Controller
@@ -264,7 +263,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                     control={control}
                     render={({ field }) => (
                       <MultiSelect
-                        id="nationalities"
+                        id={`nationalities-${personNumber}`}
                         value={field.value}
                         onChange={field.onChange}
                         options={countries}
@@ -291,7 +290,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
             </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="street" className="text-sm mb-2 block">
+                <Label htmlFor={`street-${personNumber}`} className="text-sm mb-2 block">
                   Street with street no.
                 </Label>
                 <Controller
@@ -299,7 +298,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
-                      id="street"
+                      id={`street-${personNumber}`}
                       value={field.value || ''}
                       onChange={field.onChange}
                       className="border-gray-300"
@@ -313,11 +312,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="zipCode" className="text-sm mb-2 block">
+                  <Label htmlFor={`zipCode-${personNumber}`} className="text-sm mb-2 block">
                     Zip/Postal Code
                   </Label>
                   <Input
-                    id="zipCode"
+                    id={`zipCode-${personNumber}`}
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -334,7 +333,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="city" className="text-sm mb-2 block">
+                  <Label htmlFor={`city-${personNumber}`} className="text-sm mb-2 block">
                     City
                   </Label>
                   <Controller
@@ -342,7 +341,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                     control={control}
                     render={({ field }) => (
                       <Autocomplete
-                        id="city"
+                        id={`city-${personNumber}`}
                         value={field.value || ''}
                         onChange={field.onChange}
                         className="border-gray-300"
@@ -365,7 +364,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
-                      id="country"
+                      id={`country-${personNumber}`}
                       value={field.value || ''}
                       onChange={field.onChange}
                       className="border-gray-300"
@@ -387,11 +386,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
             </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="businessEmail" className="text-sm mb-2 block">
+                <Label htmlFor={`businessEmail-${personNumber}`} className="text-sm mb-2 block">
                   Business email(s)
                 </Label>
                 <Input
-                  id="businessEmail"
+                  id={`businessEmail-${personNumber}`}
                   type="email"
                   {...register('businessEmail')}
                   className="border-gray-300"
@@ -404,11 +403,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="businessPhone" className="text-sm mb-2 block">
+                  <Label htmlFor={`businessPhone-${personNumber}`} className="text-sm mb-2 block">
                     Business phone number(s)
                   </Label>
                   <Input
-                    id="businessPhone"
+                    id={`businessPhone-${personNumber}`}
                     type="tel"
                     {...register('businessPhone')}
                     className="border-gray-300"
@@ -419,11 +418,11 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="mobilePhone" className="text-sm mb-2 block">
+                  <Label htmlFor={`mobilePhone-${personNumber}`} className="text-sm mb-2 block">
                     Mobile phone number
                   </Label>
                   <Input
-                    id="mobilePhone"
+                    id={`mobilePhone-${personNumber}`}
                     type="tel"
                     {...register('mobilePhone')}
                     className="border-gray-300"
@@ -436,7 +435,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
               </div>
 
               <div>
-                <Label htmlFor="position" className="text-sm mb-2 block">
+                <Label htmlFor={`position-${personNumber}`} className="text-sm mb-2 block">
                   Function / Position
                 </Label>
                 <Controller
@@ -444,7 +443,7 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
-                      id="position"
+                      id={`position-${personNumber}`}
                       value={field.value || ''}
                       onChange={field.onChange}
                       className="border-gray-300"
@@ -478,8 +477,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'none' && field.onChange('')}
                       >
-                        <RadioGroupItem value="none" id="sig-none" />
-                        <Label htmlFor="sig-none" className="cursor-pointer text-base">
+                        <RadioGroupItem value="none" id={`sig-none-${personNumber}`} />
+                        <Label htmlFor={`sig-none-${personNumber}`} className="cursor-pointer text-base">
                           None
                         </Label>
                       </div>
@@ -487,8 +486,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'sole' && field.onChange('')}
                       >
-                        <RadioGroupItem value="sole" id="sig-sole" />
-                        <Label htmlFor="sig-sole" className="cursor-pointer text-base">
+                        <RadioGroupItem value="sole" id={`sig-sole-${personNumber}`} />
+                        <Label htmlFor={`sig-sole-${personNumber}`} className="cursor-pointer text-base">
                           Sole
                         </Label>
                       </div>
@@ -496,8 +495,8 @@ export function AuthorizedPersonForm({ personNumber = 1 }: AuthorizedPersonFormP
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => field.value === 'jointly' && field.onChange('')}
                       >
-                        <RadioGroupItem value="jointly" id="sig-jointly" />
-                        <Label htmlFor="sig-jointly" className="cursor-pointer text-base">
+                        <RadioGroupItem value="jointly" id={`sig-jointly-${personNumber}`} />
+                        <Label htmlFor={`sig-jointly-${personNumber}`} className="cursor-pointer text-base">
                           Jointly by two
                         </Label>
                       </div>

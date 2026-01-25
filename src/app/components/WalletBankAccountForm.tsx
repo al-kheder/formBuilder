@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { useForm, useFieldArray, Control } from 'react-hook-form';
+import { useForm, useFieldArray, Control, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
@@ -20,10 +20,11 @@ export function WalletBankAccountForm() {
       updatePersons: [],
       removePersons: [],
     },
-    mode: 'onBlur',
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
-  const onSubmit = (data: WalletBankValues) => {
+  const onSubmit: SubmitHandler<WalletBankValues> = (data) => {
     console.log('Form submitted:', data);
   };
 

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const SignatureBlockSchema = z.object({
-  name: z.string().optional(),
-  date: z.string().optional(),
-  place: z.string().optional(),
-  signature: z.string().optional(),
+  name: z.string().optional().or(z.literal('')),
+  date: z.string().optional().or(z.literal('')),
+  place: z.string().optional().or(z.literal('')),
+  signature: z.string().optional().or(z.literal('')),
 });
 
 export const ScopeAuthoritySchema = z.object({
