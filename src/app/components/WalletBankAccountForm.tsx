@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { useForm, useFieldArray, Control, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, FieldApi } from '@tanstack/react-form';
+import { zodValidator } from '@tanstack/zod-form-adapter';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
@@ -8,25 +8,20 @@ import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
 import { WalletBankSchema, type WalletBankValues } from '@/lib/schemas/WalletBankSchema';
 
 export function WalletBankAccountForm() {
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<WalletBankValues>({
-    resolver: zodResolver(WalletBankSchema),
+  const form = useForm<WalletBankValues>({
     defaultValues: {
       addPersons: [],
       updatePersons: [],
       removePersons: [],
     },
-    mode: 'onChange',
-    reValidateMode: 'onChange',
+    validatorAdapter: zodValidator(),
+    validators: {
+      onChange: WalletBankSchema,
+    },
+    onSubmit: async ({ value }) => {
+      console.log('Form submitted:', value);
+    },
   });
-
-  const onSubmit: SubmitHandler<WalletBankValues> = (data) => {
-    console.log('Form submitted:', data);
-  };
 
   return (
     <div className="w-full max-w-4xl mx-auto px-8 py-12 relative form-page">
@@ -49,7 +44,14 @@ export function WalletBankAccountForm() {
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="px-8 pt-8 pb-8">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="px-8 pt-8 pb-8"
+        >
           {/* Section Title */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">
@@ -65,34 +67,44 @@ export function WalletBankAccountForm() {
           </div>
 
           {/* Add Section */}
-          <PersonSection
-            title="Add"
+          <form.Field
             name="addPersons"
-            control={control}
-            register={register}
-            errors={errors}
+            mode="array"
+            children={(field) => (
+              <PersonSection
+                title="Add"
+                field={field}
+                form={form}
+              />
+            )}
           />
 
           {/* Update Section */}
-          <PersonSection
-            title="Update"
+          <form.Field
             name="updatePersons"
-            control={control}
-            register={register}
-            errors={errors}
+            mode="array"
+            children={(field) => (
+              <PersonSection
+                title="Update"
+                field={field}
+                form={form}
+              />
+            )}
           />
 
           {/* Remove Section */}
-          <PersonSection
-            title="Remove"
+          <form.Field
             name="removePersons"
-            control={control}
-            register={register}
-            errors={errors}
+            mode="array"
+            children={(field) => (
+              <PersonSection
+                title="Remove"
+                field={field}
+                form={form}
+              />
+            )}
           />
         </form>
-
-
       </motion.div>
     </div>
   );
@@ -100,18 +112,11 @@ export function WalletBankAccountForm() {
 
 interface PersonSectionProps {
   title: string;
-  name: 'addPersons' | 'updatePersons' | 'removePersons';
-  control: Control<WalletBankValues>;
-  register: any;
-  errors: any;
+  field: FieldApi<WalletBankValues, any, any, any>;
+  form: any;
 }
 
-function PersonSection({ title, name, control, register, errors }: PersonSectionProps) {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name,
-  });
-
+function PersonSection({ title, field, form }: PersonSectionProps) {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
@@ -120,14 +125,14 @@ function PersonSection({ title, name, control, register, errors }: PersonSection
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => append({ id: `${name}-${Date.now()}`, name: '', firstname: '', email: '', phone: '' })}
+          onClick={() => field.pushValue({ id: `${field.name}-${Date.now()}`, name: '', firstname: '', email: '', phone: '' })}
           className="hover:bg-gray-100 p-1"
         >
           <Plus className="h-5 w-5" />
         </Button>
       </div>
 
-      {fields.length > 0 && (
+      {field.state.value.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -140,58 +145,86 @@ function PersonSection({ title, name, control, register, errors }: PersonSection
               </tr>
             </thead>
             <tbody>
-              {fields.map((field, index) => (
-                <tr key={field.id} className="border-b border-gray-100">
+              {field.state.value.map((_, index) => (
+                <tr key={index} className="border-b border-gray-100">
                   <td className="py-2 px-2">
-                    <Input
-                      {...register(`${name}.${index}.name`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="Last Name"
+                    <form.Field
+                      name={`${field.name}[${index}].name`}
+                      children={(subField) => (
+                        <Input
+                          value={subField.state.value}
+                          onBlur={subField.handleBlur}
+                          onChange={(e) => subField.handleChange(e.target.value)}
+                          className="border-gray-300 h-8 text-xs"
+                          placeholder="Last Name"
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2 px-2">
-                    <Input
-                      {...register(`${name}.${index}.firstname`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="First Name"
+                    <form.Field
+                      name={`${field.name}[${index}].firstname`}
+                      children={(subField) => (
+                        <Input
+                          value={subField.state.value}
+                          onBlur={subField.handleBlur}
+                          onChange={(e) => subField.handleChange(e.target.value)}
+                          className="border-gray-300 h-8 text-xs"
+                          placeholder="First Name"
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2 px-2">
-                    <div>
-                      <Input
-                        type="email"
-                        {...register(`${name}.${index}.email`)}
-                        className="border-gray-300 h-8 text-xs"
-                        placeholder="email@example.com"
-                      />
-                      {errors[name]?.[index]?.email && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[name][index].email.message}
-                        </p>
+                    <form.Field
+                      name={`${field.name}[${index}].email`}
+                      children={(subField) => (
+                        <div>
+                          <Input
+                            type="email"
+                            value={subField.state.value}
+                            onBlur={subField.handleBlur}
+                            onChange={(e) => subField.handleChange(e.target.value)}
+                            className="border-gray-300 h-8 text-xs"
+                            placeholder="email@example.com"
+                          />
+                          {subField.state.meta.errors ? (
+                            <p className="text-red-500 text-xs mt-1">
+                              {subField.state.meta.errors.join(', ')}
+                            </p>
+                          ) : null}
+                        </div>
                       )}
-                    </div>
+                    />
                   </td>
                   <td className="py-2 px-2">
-                    <div>
-                      <Input
-                        type="tel"
-                        {...register(`${name}.${index}.phone`)}
-                        className="border-gray-300 h-8 text-xs"
-                        placeholder="+1234567890"
-                      />
-                      {errors[name]?.[index]?.phone && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[name][index].phone.message}
-                        </p>
+                    <form.Field
+                      name={`${field.name}[${index}].phone`}
+                      children={(subField) => (
+                        <div>
+                          <Input
+                            type="tel"
+                            value={subField.state.value}
+                            onBlur={subField.handleBlur}
+                            onChange={(e) => subField.handleChange(e.target.value)}
+                            className="border-gray-300 h-8 text-xs"
+                            placeholder="+1234567890"
+                          />
+                          {subField.state.meta.errors ? (
+                            <p className="text-red-500 text-xs mt-1">
+                              {subField.state.meta.errors.join(', ')}
+                            </p>
+                          ) : null}
+                        </div>
                       )}
-                    </div>
+                    />
                   </td>
                   <td className="py-2 px-2 text-center">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => remove(index)}
+                      onClick={() => field.removeValue(index)}
                       className="hover:bg-gray-100 p-1"
                     >
                       <Trash2 className="h-4 w-4 text-gray-500" />

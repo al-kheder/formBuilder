@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
-import { useForm, useFieldArray, Control, Controller, UseFormSetValue, UseFormGetValues, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, FieldApi } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -25,15 +25,7 @@ const API_RIGHTS = [
 ];
 
 export function LynxAPIForm() {
-  const {
-    register,
-    control,
-    handleSubmit,
-    setValue,
-    getValues,
-    formState: { errors },
-  } = useForm<LynxAPIValues>({
-    resolver: zodResolver(LynxAPISchema),
+  const form = useForm<LynxAPIValues>({
     defaultValues: {
       addLynxPersons: [],
       updateLynxPersons: [],
@@ -42,13 +34,14 @@ export function LynxAPIForm() {
       updateAPIPersons: [],
       removeAPIPersons: [],
     },
-    mode: 'onChange',
-    reValidateMode: 'onChange',
+    validatorAdapter: zodValidator(),
+    validators: {
+      onChange: LynxAPISchema,
+    },
+    onSubmit: async ({ value }) => {
+      console.log("Form submitted:", value);
+    },
   });
-
-  const onSubmit: SubmitHandler<LynxAPIValues> = (data) => {
-    console.log("Form submitted:", data);
-  };
 
   return (
     <div className="w-full max-w-6xl mx-auto px-8 py-12 relative form-page">
@@ -80,7 +73,14 @@ export function LynxAPIForm() {
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="px-8 pt-8 pb-8">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="px-8 pt-8 pb-8"
+        >
           {/* Section 3: Lynx User Interface */}
           <div className="mb-12">
             <h2 className="text-lg font-semibold mb-4">
@@ -94,38 +94,41 @@ export function LynxAPIForm() {
               selecting one or more of the following:
             </p>
 
-            <RightsTable
-              title="Add"
+            <form.Field
               name="addLynxPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={LYNX_RIGHTS}
-              headerHeightClass="h-32"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Add"
+                  field={field}
+                  rightsConfig={LYNX_RIGHTS}
+                  form={form}
+                />
+              )}
             />
-            <RightsTable
-              title="Update"
+            <form.Field
               name="updateLynxPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={LYNX_RIGHTS}
-              headerHeightClass="h-32"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Update"
+                  field={field}
+                  rightsConfig={LYNX_RIGHTS}
+                  form={form}
+                />
+              )}
             />
-            <RightsTable
-              title="Remove"
+            <form.Field
               name="removeLynxPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={LYNX_RIGHTS}
-              headerHeightClass="h-32"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Remove"
+                  field={field}
+                  rightsConfig={LYNX_RIGHTS}
+                  form={form}
+                />
+              )}
             />
           </div>
 
@@ -138,65 +141,45 @@ export function LynxAPIForm() {
               The Client designates the below persons as API
               users with the numerically indicated rights.
             </p>
-            {/*    <div className="grid grid-cols-2 gap-x-8 mb-6">
-              <ol className="list-decimal ml-6 space-y-1 text-sm text-gray-700">
-                <li>View only via REST API</li>
-                <li>
-                  Requesting the whitelisting of wallet address
-                  via REST API
-                </li>
-                <li>
-                  Instruct the transfer out of crypto assets and
-                  FIAT via REST API
-                </li>
-              </ol>
-              <ol
-                className="list-decimal ml-6 space-y-1 text-sm text-gray-700"
-                start={4}
-              >
-                <li>Trading rights via REST API</li>
-                <li>Staking rights via REST API</li>
-                <li>Trading rights via FIX API</li>
-              </ol>
-            </div> */}
 
-            <RightsTable
-              title="Add"
+            <form.Field
               name="addAPIPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={API_RIGHTS}
-              headerHeightClass="h-48"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Add"
+                  field={field}
+                  rightsConfig={API_RIGHTS}
+                  form={form}
+                />
+              )}
             />
-            <RightsTable
-              title="Update"
+            <form.Field
               name="updateAPIPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={API_RIGHTS}
-              headerHeightClass="h-48"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Update"
+                  field={field}
+                  rightsConfig={API_RIGHTS}
+                  form={form}
+                />
+              )}
             />
-            <RightsTable
-              title="Remove"
+            <form.Field
               name="removeAPIPersons"
-              control={control}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-              errors={errors}
-              rightsConfig={API_RIGHTS}
-              headerHeightClass="h-48"
+              mode="array"
+              children={(field) => (
+                <RightsTable
+                  title="Remove"
+                  field={field}
+                  rightsConfig={API_RIGHTS}
+                  form={form}
+                />
+              )}
             />
           </div>
         </form>
-
-
       </motion.div>
     </div>
   );
@@ -204,55 +187,45 @@ export function LynxAPIForm() {
 
 interface RightsTableProps {
   title: string;
-  name: "addLynxPersons" | "updateLynxPersons" | "removeLynxPersons" | "addAPIPersons" | "updateAPIPersons" | "removeAPIPersons";
-  control: Control<LynxAPIValues>;
-  register: any;
-  setValue: UseFormSetValue<LynxAPIValues>;
-  getValues: UseFormGetValues<LynxAPIValues>;
-  errors: any;
+  field: FieldApi<LynxAPIValues, any, any, any>;
   rightsConfig: { key: string; label: string }[];
-  headerHeightClass: string;
+  form: any;
 }
 
-function RightsTable({ title, name, control, register, setValue, getValues, errors, rightsConfig, headerHeightClass }: RightsTableProps) {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name,
-  });
-
+function RightsTable({ title, field, rightsConfig, form }: RightsTableProps) {
   const handleCheckboxChange = (
     index: number,
-    field: string,
+    rightKey: string,
     checked: boolean
   ) => {
-    const rightsPath = `${name}.${index}.rights`;
+    const rightsPath = `${field.name}[${index}].rights`;
 
-    if (field === "viewOnly") {
+    if (rightKey === "viewOnly") {
       if (checked) {
         // If View Only is selected, deselect others
         rightsConfig.forEach(right => {
           if (right.key !== "viewOnly") {
-            setValue(`${rightsPath}.${right.key}` as any, false);
+            form.setFieldValue(`${rightsPath}.${right.key}` as any, false);
           }
         });
-        setValue(`${rightsPath}.viewOnly` as any, true);
+        form.setFieldValue(`${rightsPath}.viewOnly` as any, true);
       } else {
-        setValue(`${rightsPath}.viewOnly` as any, false);
+        form.setFieldValue(`${rightsPath}.viewOnly` as any, false);
       }
     } else {
       if (checked) {
         // If any other is selected, deselect View Only
-        setValue(`${rightsPath}.viewOnly` as any, false);
-        setValue(`${rightsPath}.${field}` as any, true);
+        form.setFieldValue(`${rightsPath}.viewOnly` as any, false);
+        form.setFieldValue(`${rightsPath}.${rightKey}` as any, true);
       } else {
-        setValue(`${rightsPath}.${field}` as any, false);
+        form.setFieldValue(`${rightsPath}.${rightKey}` as any, false);
       }
     }
   };
 
   const createNewItem = () => {
     const baseItem = {
-      id: `${name}-${Date.now()}`,
+      id: `${field.name}-${Date.now()}`,
       name: "",
       firstname: "",
       email: "",
@@ -274,7 +247,7 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
           <h3 className="text-base font-normal text-gray-900">
             {title}
           </h3>
-          {title === "Add" && fields.length > 0 && (
+          {title === "Add" && field.state.value.length > 0 && (
             <div className="flex flex-col flex-end gap-3 text-xs text-gray-600">
             </div>
           )}
@@ -283,14 +256,14 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => append(createNewItem())}
+          onClick={() => field.pushValue(createNewItem())}
           className="hover:bg-gray-100 p-1"
         >
           <Plus className="h-5 w-5" />
         </Button>
       </div>
 
-      {fields.length > 0 && (
+      {field.state.value.length > 0 && (
         <div className="overflow-y-visible">
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -322,56 +295,87 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
               </tr>
             </thead>
             <tbody>
-              {fields.map((field, index) => (
-                <tr key={field.id} className="border-b border-gray-100">
+              {field.state.value.map((_, index) => (
+                <tr key={index} className="border-b border-gray-100">
                   <td className="py-2 px-2">
-                    <Input
-                      {...register(`${name}.${index}.name`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="Last Name"
+                    <form.Field
+                      name={`${field.name}[${index}].name`}
+                      children={(subField) => (
+                        <Input
+                          value={subField.state.value}
+                          onBlur={subField.handleBlur}
+                          onChange={(e) => subField.handleChange(e.target.value)}
+                          className="border-gray-300 h-8 text-xs"
+                          placeholder="Last Name"
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2 px-2">
-                    <Input
-                      {...register(`${name}.${index}.firstname`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="First Name"
+                    <form.Field
+                      name={`${field.name}[${index}].firstname`}
+                      children={(subField) => (
+                        <Input
+                          value={subField.state.value}
+                          onBlur={subField.handleBlur}
+                          onChange={(e) => subField.handleChange(e.target.value)}
+                          className="border-gray-300 h-8 text-xs"
+                          placeholder="First Name"
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2 px-2">
-                    <Input
-                      type="email"
-                      {...register(`${name}.${index}.email`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="email@example.com"
+                    <form.Field
+                      name={`${field.name}[${index}].email`}
+                      children={(subField) => (
+                        <div>
+                          <Input
+                            type="email"
+                            value={subField.state.value}
+                            onBlur={subField.handleBlur}
+                            onChange={(e) => subField.handleChange(e.target.value)}
+                            className="border-gray-300 h-8 text-xs"
+                            placeholder="email@example.com"
+                          />
+                          {subField.state.meta.errors ? (
+                            <p className="text-red-500 text-xs mt-1">
+                              {subField.state.meta.errors.join(', ')}
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
                     />
-                    {errors[name]?.[index]?.email && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors[name][index].email.message}
-                      </p>
-                    )}
                   </td>
                   <td className="py-2 px-2">
-                    <Input
-                      type="tel"
-                      {...register(`${name}.${index}.phone`)}
-                      className="border-gray-300 h-8 text-xs"
-                      placeholder="+1234567890"
+                    <form.Field
+                      name={`${field.name}[${index}].phone`}
+                      children={(subField) => (
+                        <div>
+                          <Input
+                            type="tel"
+                            value={subField.state.value}
+                            onBlur={subField.handleBlur}
+                            onChange={(e) => subField.handleChange(e.target.value)}
+                            className="border-gray-300 h-8 text-xs"
+                            placeholder="+1234567890"
+                          />
+                          {subField.state.meta.errors ? (
+                            <p className="text-red-500 text-xs mt-1">
+                              {subField.state.meta.errors.join(', ')}
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
                     />
-                    {errors[name]?.[index]?.phone && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors[name][index].phone.message}
-                      </p>
-                    )}
                   </td>
                   {rightsConfig.map((right) => (
                     <td key={right.key} className="py-2 px-2 text-center">
-                      <Controller
-                        name={`${name}.${index}.rights.${right.key}` as any}
-                        control={control}
-                        render={({ field }) => (
+                      <form.Field
+                        name={`${field.name}[${index}].rights.${right.key}`}
+                        children={(subField) => (
                           <Checkbox
-                            checked={field.value}
+                            checked={subField.state.value as boolean}
                             onCheckedChange={(checked) => handleCheckboxChange(index, right.key, checked as boolean)}
                           />
                         )}
@@ -383,7 +387,7 @@ function RightsTable({ title, name, control, register, setValue, getValues, erro
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => remove(index)}
+                      onClick={() => field.removeValue(index)}
                       className="hover:bg-gray-100 p-1"
                     >
                       <Trash2 className="h-4 w-4 text-gray-500" />

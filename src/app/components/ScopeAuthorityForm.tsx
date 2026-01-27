@@ -1,29 +1,25 @@
 import { motion } from 'motion/react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from '@tanstack/react-form';
+import { zodValidator } from '@tanstack/zod-form-adapter';
 import { Input } from '@/app/components/ui/input';
 import { SignatureCanvas } from '@/app/components/SignatureCanvas';
 import logoImage from '@/assets/4bf4ce36db67390432e530e481235d9d766879e6.png';
 import { ScopeAuthoritySchema, type ScopeAuthorityValues } from '@/lib/schemas/ScopeAuthoritySchema';
 
 export function ScopeAuthorityForm() {
-  const {
-    register,
-    control,
-    handleSubmit,
-  } = useForm<ScopeAuthorityValues>({
-    resolver: zodResolver(ScopeAuthoritySchema),
+  const form = useForm<ScopeAuthorityValues>({
     defaultValues: {
       signature1: { name: '', date: '', place: '', signature: '' },
       signature2: { name: '', date: '', place: '', signature: '' },
     },
-    mode: 'onChange',
-    reValidateMode: 'onChange',
+    validatorAdapter: zodValidator(),
+    validators: {
+      onChange: ScopeAuthoritySchema,
+    },
+    onSubmit: async ({ value }) => {
+      console.log('Form submitted:', value);
+    },
   });
-
-  const onSubmit = (data: ScopeAuthorityValues) => {
-    console.log('Form submitted:', data);
-  };
 
   return (
     <div className="w-full max-w-4xl mx-auto px-8 py-12 relative form-page">
@@ -46,7 +42,14 @@ export function ScopeAuthorityForm() {
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="px-12 pt-10 pb-10">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="px-12 pt-10 pb-10"
+        >
           {/* Scope of Authority Section */}
           <div className="mb-8">
             <h2 className="text-base font-bold mb-4">Scope of Authority</h2>
@@ -103,28 +106,49 @@ export function ScopeAuthorityForm() {
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Name of Authorized Signatory
                   </label>
-                  <Input
-                    {...register('signature1.name')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature1.name"
+                    children={(field) => (
+                      <Input
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Date
                   </label>
-                  <Input
-                    type="date"
-                    {...register('signature1.date')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature1.date"
+                    children={(field) => (
+                      <Input
+                        type="date"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Place
                   </label>
-                  <Input
-                    {...register('signature1.place')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature1.place"
+                    children={(field) => (
+                      <Input
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
               </div>
@@ -133,14 +157,13 @@ export function ScopeAuthorityForm() {
                 <label className="text-xs italic text-gray-600 mb-2 block">
                   Authorized Signature
                 </label>
-                <Controller
+                <form.Field
                   name="signature1.signature"
-                  control={control}
-                  render={({ field }) => (
+                  children={(field) => (
                     <SignatureCanvas
                       width={200}
                       height={80}
-                      onSignatureChange={field.onChange}
+                      onSignatureChange={(val) => field.handleChange(val)}
                     />
                   )}
                 />
@@ -155,28 +178,49 @@ export function ScopeAuthorityForm() {
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Name of Authorized Signatory
                   </label>
-                  <Input
-                    {...register('signature2.name')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature2.name"
+                    children={(field) => (
+                      <Input
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Date
                   </label>
-                  <Input
-                    type="date"
-                    {...register('signature2.date')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature2.date"
+                    children={(field) => (
+                      <Input
+                        type="date"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <label className="text-xs italic text-gray-600 mb-2 block">
                     Place
                   </label>
-                  <Input
-                    {...register('signature2.place')}
-                    className="border-gray-300 h-8 text-sm"
+                  <form.Field
+                    name="signature2.place"
+                    children={(field) => (
+                      <Input
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="border-gray-300 h-8 text-sm"
+                      />
+                    )}
                   />
                 </div>
               </div>
@@ -185,14 +229,13 @@ export function ScopeAuthorityForm() {
                 <label className="text-xs italic text-gray-600 mb-2 block">
                   Authorized Signature
                 </label>
-                <Controller
+                <form.Field
                   name="signature2.signature"
-                  control={control}
-                  render={({ field }) => (
+                  children={(field) => (
                     <SignatureCanvas
                       width={200}
                       height={80}
-                      onSignatureChange={field.onChange}
+                      onSignatureChange={(val) => field.handleChange(val)}
                     />
                   )}
                 />
@@ -200,8 +243,6 @@ export function ScopeAuthorityForm() {
             </div>
           </div>
         </form>
-
-
       </motion.div>
     </div>
   );

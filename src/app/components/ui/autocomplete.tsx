@@ -25,21 +25,24 @@ export function Autocomplete({
   onValueCommit,
   filterInput,
 }: AutocompleteProps) {
+  // Ensure value is safe for input
+  const safeValue = typeof value === 'string' || typeof value === 'number' ? value : '';
+  
   const [isOpen, setIsOpen] = useState(false);
   const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const previousValue = useRef<string>(value);
+  const previousValue = useRef<string>(typeof value === 'string' ? value : '');
 
   useEffect(() => {
-    if (value) {
+    if (safeValue) {
       const filtered = options.filter((option) =>
-        option.toLowerCase().includes(value.toLowerCase())
+        option.toLowerCase().includes(String(safeValue).toLowerCase())
       );
       setFilteredOptions(filtered);
     } else {
       setFilteredOptions(options);
     }
-  }, [value, options]);
+  }, [safeValue, options]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -91,7 +94,7 @@ export function Autocomplete({
       <div className="relative">
         <Input
           id={id}
-          value={value}
+          value={safeValue}
           onChange={handleInputChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
